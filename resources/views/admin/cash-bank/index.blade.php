@@ -7,7 +7,7 @@
         <div class="col-md-6">
             <div class="small-box bg-success">
                 <div class="inner">
-                    <h3>{{ number_format($cashBalance, 2) }}</h3>
+                    <h3>{{ money($cashBalance) }}</h3>
                     <p>Cash Balance</p>
                 </div>
                 <div class="icon"><i class="fas fa-money-bill-wave"></i></div>
@@ -16,7 +16,7 @@
         <div class="col-md-6">
             <div class="small-box bg-info">
                 <div class="inner">
-                    <h3>{{ number_format($bankBalance, 2) }}</h3>
+                    <h3>{{ money($bankBalance) }}</h3>
                     <p>Bank Balance (incl. Mobile Banking)</p>
                 </div>
                 <div class="icon"><i class="fas fa-university"></i></div>

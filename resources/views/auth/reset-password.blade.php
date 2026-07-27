@@ -1,72 +1,64 @@
-@extends('adminlte::auth.auth-page', ['authType' => 'login'])
+@extends('auth.layout', [
+    'heading' => 'Choose a new password',
+    'subheading' => 'Pick something you have not used here before.',
+])
 
-@section('adminlte_css_pre')
-    @include('auth.partials.theme')
-@stop
-
-@section('auth_header', 'Reset Password')
-
-@section('auth_body')
+@section('form')
     <form action="{{ route('password.store') }}" method="post">
         @csrf
 
         <input type="hidden" name="token" value="{{ $request->route('token') }}">
 
-        <div class="input-group mb-3">
-            <div class="input-group-prepend">
-                <div class="input-group-text">
-                    <span class="fas fa-envelope"></span>
+        <div class="form-group">
+            <label for="email">Email address</label>
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
                 </div>
+                <input type="email" name="email" id="email" required autocomplete="username"
+                    class="form-control @error('email') is-invalid @enderror"
+                    value="{{ old('email', $request->email) }}">
             </div>
-
-            <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
-                value="{{ old('email', $request->email) }}" placeholder="Email" autofocus autocomplete="username">
-
             @error('email')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
+                <span class="invalid-feedback d-block">{{ $message }}</span>
             @enderror
         </div>
 
-        <div class="input-group mb-3">
-            <div class="input-group-prepend">
-                <div class="input-group-text">
-                    <span class="fas fa-lock"></span>
+        <div class="form-group">
+            <label for="password">New password</label>
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
                 </div>
+                <input type="password" name="password" id="password" required autofocus autocomplete="new-password"
+                    class="form-control @error('password') is-invalid @enderror">
             </div>
-
-            <input type="password" name="password" class="form-control @error('password') is-invalid @enderror"
-                placeholder="Password" autocomplete="new-password">
-
             @error('password')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
+                <span class="invalid-feedback d-block">{{ $message }}</span>
             @enderror
         </div>
 
-        <div class="input-group mb-3">
-            <div class="input-group-prepend">
-                <div class="input-group-text">
-                    <span class="fas fa-lock"></span>
+        <div class="form-group">
+            <label for="password_confirmation">Confirm new password</label>
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
                 </div>
+                <input type="password" name="password_confirmation" id="password_confirmation"
+                    required autocomplete="new-password"
+                    class="form-control @error('password_confirmation') is-invalid @enderror">
             </div>
-
-            <input type="password" name="password_confirmation"
-                class="form-control @error('password_confirmation') is-invalid @enderror"
-                placeholder="Confirm Password" autocomplete="new-password">
-
             @error('password_confirmation')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
+                <span class="invalid-feedback d-block">{{ $message }}</span>
             @enderror
         </div>
 
-        <button type="submit" class="btn btn-block btn-flat btn-primary">
-            <span class="fas fa-sync-alt"></span>
-            Reset Password
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-key mr-1"></i> Set new password
         </button>
     </form>
-@stop
+
+    <p class="auth-links">
+        <a href="{{ route('login') }}">Back to sign in</a>
+    </p>
+@endsection

@@ -30,7 +30,7 @@
                     <th>Invoice</th>
                     <td>
                         @if ($asset->invoice_file)
-                            <a href="{{ asset('storage/'.$asset->invoice_file) }}" target="_blank">View Invoice</a>
+                            <a href="{{ media_url($asset->invoice_file) }}" target="_blank">View Invoice</a>
                         @else
                             -
                         @endif

@@ -69,11 +69,11 @@
                 <tfoot>
                     <tr>
                         <th colspan="3" class="text-right">Totals</th>
-                        <th>{{ number_format($totals['subtotal'], 2) }}</th>
-                        <th>{{ number_format($totals['vat_amount'], 2) }}</th>
-                        <th>{{ number_format($totals['total_amount'], 2) }}</th>
-                        <th>{{ number_format($totals['paid_amount'], 2) }}</th>
-                        <th>{{ number_format($totals['due_amount'], 2) }}</th>
+                        <th>{{ money($totals['subtotal']) }}</th>
+                        <th>{{ money($totals['vat_amount']) }}</th>
+                        <th>{{ money($totals['total_amount']) }}</th>
+                        <th>{{ money($totals['paid_amount']) }}</th>
+                        <th>{{ money($totals['due_amount']) }}</th>
                     </tr>
                 </tfoot>
             </table>

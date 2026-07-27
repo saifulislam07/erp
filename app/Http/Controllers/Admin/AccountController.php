@@ -14,9 +14,7 @@ use Illuminate\View\View;
 
 class AccountController extends Controller
 {
-    public function __construct(private readonly CashBankService $cashBankService)
-    {
-    }
+    public function __construct(private readonly CashBankService $cashBankService) {}
 
     public function payable(Request $request): View
     {

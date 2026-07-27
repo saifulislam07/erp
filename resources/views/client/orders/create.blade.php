@@ -28,7 +28,7 @@
                                 <tr class="catalog-row" data-name="{{ strtolower($product->name) }}">
                                     <td>{{ $product->name }}</td>
                                     <td>{{ $product->category?->name }}</td>
-                                    <td>{{ $product->sale_price }} / {{ $product->unit?->symbol }}</td>
+                                    <td>{{ $product->sale_price }} / {{ $product->unit?->name }}</td>
                                     <td><input type="number" min="1" value="1" class="form-control form-control-sm add-qty" style="width: 70px;"></td>
                                     <td>
                                         <button type="button" class="btn btn-sm btn-primary add-to-cart"

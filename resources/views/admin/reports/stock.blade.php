@@ -73,8 +73,8 @@
                             <td>{{ $stock->store->name }}</td>
                             <td>{{ $stock->batch_number }}</td>
                             <td>{{ $stock->quantity }}</td>
-                            <td>{{ number_format($stock->purchase_price, 2) }}</td>
-                            <td>{{ number_format($stock->quantity * $stock->purchase_price, 2) }}</td>
+                            <td>{{ money($stock->purchase_price) }}</td>
+                            <td>{{ money($stock->quantity * $stock->purchase_price) }}</td>
                             <td>{{ $stock->expiry_date?->format('Y-m-d') }}</td>
                         </tr>
                     @endforeach
@@ -82,7 +82,7 @@
                 <tfoot>
                     <tr>
                         <th colspan="6" class="text-right">Total Value</th>
-                        <th colspan="2">{{ number_format($totalValue, 2) }}</th>
+                        <th colspan="2">{{ money($totalValue) }}</th>
                     </tr>
                 </tfoot>
             </table>

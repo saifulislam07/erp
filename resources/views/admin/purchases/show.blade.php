@@ -14,6 +14,19 @@
                     <a href="{{ route('admin.invoices.purchase', ['purchase' => $purchase, 'format' => 'pdf']) }}" class="btn btn-danger btn-sm">
                         <i class="fas fa-file-pdf"></i> Download PDF
                     </a>
+                    @if ($purchase->supplier?->email)
+                        <form action="{{ route('admin.invoices.send', ['type' => 'purchase', 'id' => $purchase->id]) }}"
+                              method="post" class="d-inline"
+                              data-confirm="Email this purchase order?"
+                              data-confirm-text="A PDF will be sent to {{ $purchase->supplier->email }}."
+                              data-confirm-button="Send"
+                              data-confirm-danger="0">
+                            @csrf
+                            <button type="submit" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-paper-plane"></i> Email supplier
+                            </button>
+                        </form>
+                    @endif
                 @endcan
                 <a href="{{ route('admin.purchases.returns.index', $purchase) }}" class="btn btn-secondary btn-sm">Returns</a>
                 <a href="{{ route('admin.purchases.index') }}" class="btn btn-secondary btn-sm">Back</a>

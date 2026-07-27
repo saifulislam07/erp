@@ -97,7 +97,7 @@
                                     </a>
                                 @endcan
                                 @can('delete', $sale)
-                                    <form action="{{ route('admin.sales.destroy', $sale) }}" method="post" class="d-inline delete-form">
+                                    <form action="{{ route('admin.sales.destroy', $sale) }}" method="post" class="d-inline" data-confirm="Delete this sale?" data-confirm-text="This will reverse the stock and payment for this sale." data-confirm-button="Delete">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger">
@@ -119,19 +119,6 @@
         $(function () {
             $('#sales-table').DataTable();
 
-            $('.delete-form').on('submit', function (e) {
-                e.preventDefault();
-                const form = this;
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: 'This will reverse the stock and payment for this sale.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, delete it',
-                }).then((result) => {
-                    if (result.isConfirmed) form.submit();
-                });
-            });
         });
     </script>
 @endpush

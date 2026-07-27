@@ -157,7 +157,7 @@ class SearchController extends Controller
                 $results->push([
                     'type' => 'Product',
                     'label' => "{$product->name} ({$product->unique_id})",
-                    'url' => route('admin.products.edit', $product),
+                    'url' => route('admin.products.show', $product),
                 ]);
             });
 

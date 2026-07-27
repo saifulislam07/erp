@@ -1,76 +1,79 @@
-@extends('adminlte::auth.auth-page', ['authType' => 'login'])
+@extends('auth.layout', [
+    'heading' => 'Sign in',
+    'subheading' => 'Use the account your administrator set up for you.',
+])
 
-@section('adminlte_css_pre')
-    <link rel="stylesheet" href="{{ asset('vendor/icheck-bootstrap/icheck-bootstrap.min.css') }}">
-    @include('auth.partials.theme')
-@stop
-
-@section('auth_header', config('app.name') . ' — Admin Login')
-
-@section('auth_body')
+@section('form')
     <form action="{{ route('login') }}" method="post">
         @csrf
 
-        {{-- Email field --}}
-        <div class="input-group mb-3">
-            <div class="input-group-prepend">
-                <div class="input-group-text">
-                    <span class="fas fa-envelope"></span>
+        <div class="form-group">
+            <label for="email">Email address</label>
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
                 </div>
+                <input type="email" name="email" id="email" required autofocus autocomplete="username"
+                    class="form-control @error('email') is-invalid @enderror"
+                    value="{{ old('email') }}" placeholder="you@company.com">
             </div>
-
-            <input type="email" name="email" class="form-control @error('email') is-invalid @enderror"
-                value="{{ old('email') }}" placeholder="Email" autofocus autocomplete="username">
-
             @error('email')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
+                <span class="invalid-feedback d-block">{{ $message }}</span>
             @enderror
         </div>
 
-        {{-- Password field --}}
-        <div class="input-group mb-3">
-            <div class="input-group-prepend">
-                <div class="input-group-text">
-                    <span class="fas fa-lock"></span>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                </div>
+                <input type="password" name="password" id="password" required autocomplete="current-password"
+                    class="form-control @error('password') is-invalid @enderror"
+                    placeholder="Your password">
+                <div class="input-group-append">
+                    <button type="button" class="btn btn-secondary" id="toggle-password"
+                            aria-label="Show password" title="Show password">
+                        <i class="fas fa-eye"></i>
+                    </button>
                 </div>
             </div>
-
-            <input type="password" name="password" class="form-control @error('password') is-invalid @enderror"
-                placeholder="Password" autocomplete="current-password">
-
             @error('password')
-                <span class="invalid-feedback" role="alert">
-                    <strong>{{ $message }}</strong>
-                </span>
+                <span class="invalid-feedback d-block">{{ $message }}</span>
             @enderror
         </div>
 
-        {{-- Login field --}}
-        <div class="row align-items-center">
-            <div class="col-7">
-                <div class="icheck-primary">
-                    <input type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
-
-                    <label for="remember">Remember Me</label>
-                </div>
-            </div>
-
-            <div class="col-5">
-                <button type="submit" class="btn btn-block btn-flat btn-primary">
-                    <span class="fas fa-sign-in-alt"></span>
-                    Sign In
-                </button>
-            </div>
+        <div class="custom-control custom-checkbox mb-4">
+            <input type="checkbox" name="remember" id="remember" value="1"
+                class="custom-control-input" @checked(old('remember'))>
+            <label for="remember" class="custom-control-label">Keep me signed in</label>
         </div>
-    </form>
-@stop
 
-@section('auth_footer')
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-sign-in-alt mr-1"></i> Sign in
+        </button>
+    </form>
+
     @if (Route::has('password.request'))
-        <p class="my-0">
-            <a href="{{ route('password.request') }}">I forgot my password</a>
+        <p class="auth-links">
+            <a href="{{ route('password.request') }}">Forgot your password?</a>
         </p>
     @endif
-@stop
+@endsection
+
+@push('js')
+    <script>
+        $(function () {
+            $('#toggle-password').on('click', function () {
+                const $field = $('#password');
+                const showing = $field.attr('type') === 'text';
+                const label = showing ? 'Show password' : 'Hide password';
+
+                $field.attr('type', showing ? 'password' : 'text');
+                $(this)
+                    .attr({ 'aria-label': label, title: label })
+                    .find('i').attr('class', showing ? 'fas fa-eye' : 'fas fa-eye-slash');
+            });
+        });
+    </script>
+@endpush

@@ -12,9 +12,7 @@ use Illuminate\View\View;
 
 class SalaryController extends Controller
 {
-    public function __construct(private readonly CashBankService $cashBankService)
-    {
-    }
+    public function __construct(private readonly CashBankService $cashBankService) {}
 
     public function index(): View
     {

@@ -3,6 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Asset;
+use App\Models\Client;
+use App\Models\Expense;
+use App\Models\Order;
+use App\Models\Product;
+use App\Models\Purchase;
+use App\Models\Sale;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -11,13 +18,13 @@ use Spatie\Activitylog\Models\Activity;
 class ActivityLogController extends Controller
 {
     private const array LOGGED_MODELS = [
-        'Product' => \App\Models\Product::class,
-        'Purchase' => \App\Models\Purchase::class,
-        'Sale' => \App\Models\Sale::class,
-        'Order' => \App\Models\Order::class,
-        'Client' => \App\Models\Client::class,
-        'Expense' => \App\Models\Expense::class,
-        'Asset' => \App\Models\Asset::class,
+        'Product' => Product::class,
+        'Purchase' => Purchase::class,
+        'Sale' => Sale::class,
+        'Order' => Order::class,
+        'Client' => Client::class,
+        'Expense' => Expense::class,
+        'Asset' => Asset::class,
     ];
 
     public function index(Request $request): View

@@ -3,211 +3,308 @@
 @section('content_title', 'Dashboard')
 
 @section('content_body')
-    <div class="row">
-        @if ($can['client'])
-            <div class="col-lg-4 col-6">
-                <div class="small-box bg-info">
-                    <div class="inner">
-                        <h3>{{ $cards['total_clients'] }}</h3>
-                        <p>Total Clients</p>
-                    </div>
-                    <div class="icon"><i class="fas fa-users"></i></div>
-                </div>
-            </div>
-        @endif
+    {{--
+        Tiles are grouped by the question they answer — what happened today,
+        where the money stands, what the catalogue looks like — instead of one
+        undifferentiated wall of large boxes.
+    --}}
 
-        @if ($can['product'])
-            <div class="col-lg-4 col-6">
-                <div class="small-box bg-success">
-                    <div class="inner">
-                        <h3>{{ $cards['total_products'] }}</h3>
-                        <p>Total Products</p>
-                    </div>
-                    <div class="icon"><i class="fas fa-box"></i></div>
-                </div>
-            </div>
-        @endif
+    @if ($can['sale'] || $can['purchase'] || $can['expense'] || $can['order'])
+        <p class="section-label">Today &middot; {{ now()->format('d M Y') }}</p>
 
-        @if ($can['stock'])
-            <div class="col-lg-4 col-6">
-                <div class="small-box bg-warning">
-                    <div class="inner">
-                        <h3>{{ $cards['total_stock_value'] }}</h3>
-                        <p>Total Stock Value</p>
-                    </div>
-                    <div class="icon"><i class="fas fa-warehouse"></i></div>
+        <div class="row">
+            @if ($can['sale'])
+                <div class="col-6 col-md-4 col-xl-3">
+                    <a class="stat-tile stat-tile--success" href="{{ route('admin.sales.index') }}">
+                        <span class="stat-tile__icon"><i class="fas fa-cash-register"></i></span>
+                        <span class="stat-tile__body">
+                            <span class="stat-tile__label">Sales today</span>
+                            <span class="stat-tile__value">{{ money($today['sales_total']) }}</span>
+                            <span class="stat-tile__meta">{{ $today['sales_count'] }} {{ Str::plural('invoice', $today['sales_count']) }}</span>
+                        </span>
+                    </a>
                 </div>
-            </div>
-        @endif
+            @endif
 
-        @if ($can['sale'])
-            <div class="col-lg-4 col-6">
-                <div class="small-box bg-primary">
-                    <div class="inner">
-                        <h3>{{ $cards['todays_sales'] }}</h3>
-                        <p>Today's Sales</p>
-                    </div>
-                    <div class="icon"><i class="fas fa-cash-register"></i></div>
+            @if ($can['purchase'])
+                <div class="col-6 col-md-4 col-xl-3">
+                    <a class="stat-tile stat-tile--warning" href="{{ route('admin.purchases.index') }}">
+                        <span class="stat-tile__icon"><i class="fas fa-truck-loading"></i></span>
+                        <span class="stat-tile__body">
+                            <span class="stat-tile__label">Purchases today</span>
+                            <span class="stat-tile__value">{{ money($today['purchases_total']) }}</span>
+                        </span>
+                    </a>
                 </div>
-            </div>
-        @endif
+            @endif
 
-        @if ($can['order'])
-            <div class="col-lg-4 col-6">
-                <div class="small-box bg-danger">
-                    <div class="inner">
-                        <h3>{{ $cards['pending_orders'] }}</h3>
-                        <p>Pending Orders</p>
-                    </div>
-                    <div class="icon"><i class="fas fa-shopping-cart"></i></div>
+            @if ($can['expense'])
+                <div class="col-6 col-md-4 col-xl-3">
+                    <a class="stat-tile stat-tile--danger" href="{{ route('admin.expenses.index') }}">
+                        <span class="stat-tile__icon"><i class="fas fa-receipt"></i></span>
+                        <span class="stat-tile__body">
+                            <span class="stat-tile__label">Expenses today</span>
+                            <span class="stat-tile__value">{{ money($today['expenses_total']) }}</span>
+                        </span>
+                    </a>
                 </div>
-            </div>
-        @endif
+            @endif
 
-        @if ($can['stock'])
-            <div class="col-lg-4 col-6">
-                <div class="small-box bg-secondary">
-                    <div class="inner">
-                        <h3>{{ $cards['low_stock_alerts'] }}</h3>
-                        <p>Low Stock Alerts</p>
-                    </div>
-                    <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
+            @if ($can['order'])
+                <div class="col-6 col-md-4 col-xl-3">
+                    <a class="stat-tile {{ $today['pending_orders'] > 0 ? 'stat-tile--info' : 'stat-tile--muted' }}"
+                       href="{{ route('admin.orders.pending') }}">
+                        <span class="stat-tile__icon"><i class="fas fa-hourglass-half"></i></span>
+                        <span class="stat-tile__body">
+                            <span class="stat-tile__label">Orders waiting</span>
+                            <span class="stat-tile__value">{{ number_format($today['pending_orders']) }}</span>
+                        </span>
+                    </a>
                 </div>
-            </div>
-        @endif
-    </div>
+            @endif
+        </div>
+    @endif
 
-    @if ($can['cash'] || $can['expense'] || $can['sale'])
+    @if ($can['cash'] || $can['sale'] || $can['purchase'])
+        <p class="section-label">Money position</p>
+
         <div class="row">
             @if ($can['cash'])
-                <div class="col-lg-3 col-6">
-                    <div class="small-box bg-success">
-                        <div class="inner">
-                            <h3>{{ number_format($cashWidgets['cash_balance'], 2) }}</h3>
-                            <p>Cash Balance</p>
-                        </div>
-                        <div class="icon"><i class="fas fa-money-bill-wave"></i></div>
-                    </div>
+                <div class="col-6 col-md-4 col-xl-3">
+                    <a class="stat-tile stat-tile--success" href="{{ route('admin.cash-bank.index') }}">
+                        <span class="stat-tile__icon"><i class="fas fa-wallet"></i></span>
+                        <span class="stat-tile__body">
+                            <span class="stat-tile__label">Cash in hand</span>
+                            <span class="stat-tile__value">{{ money($position['cash_balance']) }}</span>
+                        </span>
+                    </a>
                 </div>
-                <div class="col-lg-3 col-6">
-                    <div class="small-box bg-info">
-                        <div class="inner">
-                            <h3>{{ number_format($cashWidgets['bank_balance'], 2) }}</h3>
-                            <p>Bank Balance</p>
-                        </div>
-                        <div class="icon"><i class="fas fa-university"></i></div>
-                    </div>
+
+                <div class="col-6 col-md-4 col-xl-3">
+                    <a class="stat-tile stat-tile--info" href="{{ route('admin.cash-bank.index') }}">
+                        <span class="stat-tile__icon"><i class="fas fa-university"></i></span>
+                        <span class="stat-tile__body">
+                            <span class="stat-tile__label">Bank balance</span>
+                            <span class="stat-tile__value">{{ money($position['bank_balance']) }}</span>
+                        </span>
+                    </a>
                 </div>
             @endif
+
             @if ($can['sale'])
-                <div class="col-lg-3 col-6">
-                    <div class="small-box bg-primary">
-                        <div class="inner">
-                            <h3>{{ number_format($cards['todays_sales'], 2) }}</h3>
-                            <p>Today's Sales Revenue</p>
-                        </div>
-                        <div class="icon"><i class="fas fa-chart-line"></i></div>
-                    </div>
+                <div class="col-6 col-md-4 col-xl-3">
+                    <a class="stat-tile {{ $position['receivable'] > 0 ? 'stat-tile--primary' : 'stat-tile--muted' }}"
+                       href="{{ route('admin.customer-payments.index') }}">
+                        <span class="stat-tile__icon"><i class="fas fa-hand-holding-usd"></i></span>
+                        <span class="stat-tile__body">
+                            <span class="stat-tile__label">Customers owe us</span>
+                            <span class="stat-tile__value">{{ money($position['receivable']) }}</span>
+                        </span>
+                    </a>
                 </div>
             @endif
-            @if ($can['expense'])
-                <div class="col-lg-3 col-6">
-                    <div class="small-box bg-danger">
-                        <div class="inner">
-                            <h3>{{ number_format($cashWidgets['todays_expenses'], 2) }}</h3>
-                            <p>Today's Expenses</p>
-                        </div>
-                        <div class="icon"><i class="fas fa-receipt"></i></div>
-                    </div>
+
+            @if ($can['purchase'])
+                <div class="col-6 col-md-4 col-xl-3">
+                    <a class="stat-tile {{ $position['payable'] > 0 ? 'stat-tile--danger' : 'stat-tile--muted' }}"
+                       href="{{ route('admin.supplier-payments.index') }}">
+                        <span class="stat-tile__icon"><i class="fas fa-file-invoice-dollar"></i></span>
+                        <span class="stat-tile__body">
+                            <span class="stat-tile__label">We owe suppliers</span>
+                            <span class="stat-tile__value">{{ money($position['payable']) }}</span>
+                        </span>
+                    </a>
+                </div>
+            @endif
+        </div>
+    @endif
+
+    @if ($can['product'] || $can['stock'] || $can['client'] || $can['user'] || $can['department'])
+        <p class="section-label">Catalogue &amp; people</p>
+
+        <div class="row">
+            @if ($can['product'])
+                <div class="col-6 col-md-4 col-xl-3">
+                    <a class="stat-tile stat-tile--primary" href="{{ route('admin.products.index') }}">
+                        <span class="stat-tile__icon"><i class="fas fa-box-open"></i></span>
+                        <span class="stat-tile__body">
+                            <span class="stat-tile__label">Products</span>
+                            <span class="stat-tile__value">{{ number_format($catalogue['products']) }}</span>
+                        </span>
+                    </a>
+                </div>
+            @endif
+
+            @if ($can['stock'])
+                <div class="col-6 col-md-4 col-xl-3">
+                    <a class="stat-tile stat-tile--muted" href="{{ route('admin.stocks.index') }}">
+                        <span class="stat-tile__icon"><i class="fas fa-warehouse"></i></span>
+                        <span class="stat-tile__body">
+                            <span class="stat-tile__label">Stock value</span>
+                            <span class="stat-tile__value">{{ money($catalogue['stock_value']) }}</span>
+                            <span class="stat-tile__meta">{{ qty($catalogue['stock_units']) }} units at cost</span>
+                        </span>
+                    </a>
+                </div>
+
+                <div class="col-6 col-md-4 col-xl-3">
+                    <a class="stat-tile {{ $catalogue['low_stock'] > 0 ? 'stat-tile--danger' : 'stat-tile--muted' }}"
+                       href="{{ route('admin.stocks.low-quantity') }}">
+                        <span class="stat-tile__icon"><i class="fas fa-exclamation-triangle"></i></span>
+                        <span class="stat-tile__body">
+                            <span class="stat-tile__label">Low stock</span>
+                            <span class="stat-tile__value">{{ number_format($catalogue['low_stock']) }}</span>
+                            <span class="stat-tile__meta">{{ Str::plural('product', $catalogue['low_stock']) }} to reorder</span>
+                        </span>
+                    </a>
+                </div>
+            @endif
+
+            @if ($can['client'])
+                <div class="col-6 col-md-4 col-xl-3">
+                    <a class="stat-tile stat-tile--info" href="{{ route('admin.clients.index') }}">
+                        <span class="stat-tile__icon"><i class="fas fa-handshake"></i></span>
+                        <span class="stat-tile__body">
+                            <span class="stat-tile__label">Clients &amp; agents</span>
+                            <span class="stat-tile__value">{{ number_format($catalogue['clients']) }}</span>
+                        </span>
+                    </a>
+                </div>
+            @endif
+
+            @if ($can['user'])
+                <div class="col-6 col-md-4 col-xl-3">
+                    <a class="stat-tile stat-tile--muted" href="{{ route('admin.employees.index') }}">
+                        <span class="stat-tile__icon"><i class="fas fa-user-tie"></i></span>
+                        <span class="stat-tile__body">
+                            <span class="stat-tile__label">Employees</span>
+                            <span class="stat-tile__value">{{ number_format($team['employees']) }}</span>
+                        </span>
+                    </a>
+                </div>
+            @endif
+
+            @if ($can['department'])
+                <div class="col-6 col-md-4 col-xl-3">
+                    <a class="stat-tile stat-tile--muted" href="{{ route('admin.departments.index') }}">
+                        <span class="stat-tile__icon"><i class="fas fa-building"></i></span>
+                        <span class="stat-tile__body">
+                            <span class="stat-tile__label">Departments</span>
+                            <span class="stat-tile__value">{{ number_format($team['departments']) }}</span>
+                        </span>
+                    </a>
                 </div>
             @endif
         </div>
     @endif
 
     @if ($can['sale'] || $can['purchase'] || $can['order'] || $can['report'])
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        @if ($can['sale'])
-                            <a href="{{ route('admin.sales.create') }}" class="btn btn-primary mr-2"><i class="fas fa-cash-register mr-1"></i> New Sale</a>
-                        @endif
-                        @if ($can['purchase'])
-                            <a href="{{ route('admin.purchases.create') }}" class="btn btn-success mr-2"><i class="fas fa-truck-loading mr-1"></i> New Purchase</a>
-                        @endif
-                        @if ($can['order'])
-                            <a href="{{ route('admin.orders.index') }}" class="btn btn-warning mr-2"><i class="fas fa-shopping-cart mr-1"></i> View Orders</a>
-                        @endif
-                        @if ($can['report'])
-                            <a href="{{ route('admin.reports.index') }}" class="btn btn-info"><i class="fas fa-chart-bar mr-1"></i> View Reports</a>
-                        @endif
-                    </div>
-                </div>
+        <div class="card">
+            <div class="card-body page-actions">
+                @if ($can['sale'])
+                    <a href="{{ route('admin.sales.create') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus mr-1"></i> New sale
+                    </a>
+                @endif
+                @if ($can['purchase'])
+                    <a href="{{ route('admin.purchases.create') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-plus mr-1"></i> New purchase
+                    </a>
+                @endif
+                @if ($can['order'])
+                    <a href="{{ route('admin.orders.pending') }}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-shopping-cart mr-1"></i> Pending orders
+                    </a>
+                @endif
+                @if ($can['report'])
+                    <a href="{{ route('admin.reports.index') }}" class="btn btn-secondary btn-sm ml-auto">
+                        <i class="fas fa-chart-bar mr-1"></i> Reports
+                    </a>
+                @endif
             </div>
-        </div>
-    @endif
-
-    @if ($can['sale'] || $can['order'])
-        <div class="row">
-            @if ($can['sale'])
-                <div class="col-md-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Sales - Last 30 Days</h3>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="salesChart" height="100"></canvas>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            @if ($can['order'])
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Order Status Distribution</h3>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="orderStatusChart" height="150"></canvas>
-                        </div>
-                    </div>
-                </div>
-            @endif
         </div>
     @endif
 
     <div class="row">
         @if ($can['sale'])
-            <div class="col-md-6">
+            <div class="col-xl-8">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Top 5 Selling Products</h3>
+                        <h3 class="card-title">Sales, last 30 days</h3>
                     </div>
                     <div class="card-body">
-                        <canvas id="topProductsChart" height="150"></canvas>
+                        <canvas id="salesChart" height="90"></canvas>
                     </div>
                 </div>
             </div>
         @endif
 
-        <div class="col-md-6">
+        @if ($can['order'])
+            <div class="col-xl-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Orders by status</h3>
+                    </div>
+                    <div class="card-body">
+                        @if (empty($orderStatusDistribution['labels']))
+                            <div class="empty-state">
+                                <i class="fas fa-shopping-cart"></i>
+                                <p>No orders yet.</p>
+                            </div>
+                        @else
+                            <canvas id="orderStatusChart" height="180"></canvas>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endif
+    </div>
+
+    <div class="row">
+        @if ($can['sale'])
+            <div class="col-xl-5">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Best sellers</h3>
+                    </div>
+                    <div class="card-body">
+                        @if (empty($topProducts))
+                            <div class="empty-state">
+                                <i class="fas fa-trophy"></i>
+                                <p>Nothing sold yet.</p>
+                            </div>
+                        @else
+                            <canvas id="topProductsChart" height="190"></canvas>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <div class="{{ $can['sale'] ? 'col-xl-7' : 'col-12' }}">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Recent Activities</h3>
+                    <h3 class="card-title">Latest activity</h3>
                 </div>
-                <div class="card-body p-0" style="max-height: 320px; overflow-y: auto;">
+                <div class="card-body p-0" style="max-height: 340px; overflow-y: auto;">
                     @if (empty($recentActivities))
-                        <p class="p-3 text-muted mb-0">No recent activity.</p>
+                        <div class="empty-state">
+                            <i class="fas fa-stream"></i>
+                            <p>Nothing has happened yet.</p>
+                        </div>
                     @else
-                        <table class="table table-sm mb-0">
+                        <table class="table table-hover table-sm mb-0">
                             <tbody>
                                 @foreach ($recentActivities as $activity)
                                     <tr>
-                                        <td><span class="badge badge-secondary">{{ $activity['type'] }}</span></td>
-                                        <td>{{ $activity['description'] }}</td>
-                                        <td class="text-right">{{ number_format($activity['amount'], 2) }}</td>
-                                        <td class="text-muted text-sm">{{ \Illuminate\Support\Carbon::parse($activity['date'])->diffForHumans() }}</td>
+                                        <td style="width: 84px">
+                                            <span class="badge badge-soft-{{ $activity['tone'] }}">{{ $activity['type'] }}</span>
+                                        </td>
+                                        <td><a href="{{ $activity['url'] }}">{{ $activity['description'] }}</a></td>
+                                        <td class="text-right text-nowrap">{{ money($activity['amount']) }}</td>
+                                        <td class="text-muted text-right text-nowrap" style="width: 110px">
+                                            {{ \Illuminate\Support\Carbon::parse($activity['date'])->diffForHumans(short: true) }}
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -217,45 +314,23 @@
             </div>
         </div>
     </div>
-
-    @if ($can['department'] || $can['user'])
-        <div class="row">
-            @if ($can['department'])
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Departments</h3>
-                        </div>
-                        <div class="card-body">
-                            <h2>{{ $totalDepartments }}</h2>
-                            <p class="text-muted">Total departments</p>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            @if ($can['user'])
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Employees</h3>
-                        </div>
-                        <div class="card-body">
-                            <h2>{{ $totalEmployees }}</h2>
-                            <p class="text-muted">Total employees</p>
-                        </div>
-                    </div>
-                </div>
-            @endif
-        </div>
-    @endif
 @endsection
 
 @push('js')
     <script>
         $(function () {
+            if (typeof Chart === 'undefined') {
+                return;
+            }
+
+            Chart.defaults.font.family = 'Inter, "Segoe UI", system-ui, sans-serif';
+            Chart.defaults.font.size = 11;
+            Chart.defaults.color = '#94a3b8';
+
+            const gridline = { color: 'rgba(148, 163, 184, .18)', drawBorder: false };
+
             // Each canvas is only rendered when the viewer holds the matching
-            // permission, so guard against a missing element before drawing.
+            // permission and there is data to show, so guard before drawing.
             const salesCanvas = document.getElementById('salesChart');
             if (salesCanvas) {
                 new Chart(salesCanvas, {
@@ -265,28 +340,45 @@
                         datasets: [{
                             label: 'Sales',
                             data: @json($salesChart['totals']),
-                            borderColor: '#007bff',
-                            backgroundColor: 'rgba(0,123,255,0.1)',
+                            borderColor: '#4f46e5',
+                            backgroundColor: 'rgba(79, 70, 229, .10)',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
                             fill: true,
-                            tension: 0.3,
+                            tension: 0.35,
                         }],
                     },
-                    options: { responsive: true, plugins: { legend: { display: false } } },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { grid: { display: false } },
+                            y: { beginAtZero: true, grid: gridline },
+                        },
+                    },
                 });
             }
 
             const orderStatusCanvas = document.getElementById('orderStatusChart');
             if (orderStatusCanvas) {
                 new Chart(orderStatusCanvas, {
-                    type: 'pie',
+                    type: 'doughnut',
                     data: {
                         labels: @json($orderStatusDistribution['labels']),
                         datasets: [{
                             data: @json($orderStatusDistribution['counts']),
-                            backgroundColor: ['#17a2b8', '#ffc107', '#28a745', '#dc3545', '#6c757d', '#007bff', '#fd7e14'],
+                            backgroundColor: ['#4f46e5', '#0284c7', '#0f9d58', '#d97706', '#dc2626', '#7c3aed', '#64748b'],
+                            borderWidth: 0,
                         }],
                     },
-                    options: { responsive: true },
+                    options: {
+                        responsive: true,
+                        cutout: '62%',
+                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12 } } },
+                    },
                 });
             }
 
@@ -297,12 +389,22 @@
                     data: {
                         labels: @json(array_column($topProducts, 'name')),
                         datasets: [{
-                            label: 'Quantity Sold',
+                            label: 'Units sold',
                             data: @json(array_column($topProducts, 'qty')),
-                            backgroundColor: '#28a745',
+                            backgroundColor: '#4f46e5',
+                            borderRadius: 4,
+                            barThickness: 16,
                         }],
                     },
-                    options: { responsive: true, plugins: { legend: { display: false } } },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { beginAtZero: true, grid: gridline },
+                            y: { grid: { display: false } },
+                        },
+                    },
                 });
             }
         });

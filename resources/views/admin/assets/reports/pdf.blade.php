@@ -42,7 +42,7 @@
         <tfoot>
             <tr>
                 <th colspan="3">Total Value</th>
-                <th>{{ number_format($assets->sum('purchase_price'), 2) }}</th>
+                <th>{{ money($assets->sum('purchase_price'), false) }}</th>
                 <th colspan="3"></th>
             </tr>
         </tfoot>

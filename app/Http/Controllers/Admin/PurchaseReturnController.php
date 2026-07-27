@@ -13,9 +13,7 @@ use Illuminate\View\View;
 
 class PurchaseReturnController extends Controller
 {
-    public function __construct(private readonly StockService $stockService)
-    {
-    }
+    public function __construct(private readonly StockService $stockService) {}
 
     public function index(Purchase $purchase): View
     {

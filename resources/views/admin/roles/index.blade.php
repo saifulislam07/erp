@@ -43,7 +43,7 @@
                                 @endcan
                                 @can('role.delete')
                                     <form action="{{ route('admin.roles.destroy', $role) }}" method="post"
-                                        class="d-inline delete-form">
+                                        class="d-inline" data-confirm="Delete this role?" data-confirm-text="This role will be permanently deleted." data-confirm-button="Delete">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger">
@@ -65,22 +65,6 @@
         $(function () {
             $('#roles-table').DataTable();
 
-            $('.delete-form').on('submit', function (e) {
-                e.preventDefault();
-                const form = this;
-
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: 'This role will be permanently deleted.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, delete it',
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
-                });
-            });
         });
     </script>
 @endpush

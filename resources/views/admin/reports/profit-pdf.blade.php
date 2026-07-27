@@ -15,12 +15,12 @@
     <p>From: {{ $fromDate ?? 'N/A' }} To: {{ $toDate ?? 'N/A' }}</p>
 
     <table>
-        <tr><th>Gross Revenue</th><td>{{ number_format($summary['gross_revenue'], 2) }}</td></tr>
-        <tr><th>Cost of Goods</th><td>{{ number_format($summary['cost_of_goods'], 2) }}</td></tr>
-        <tr><th>Gross Profit</th><td>{{ number_format($summary['gross_profit'], 2) }}</td></tr>
-        <tr><th>Total Expenses</th><td>{{ number_format($summary['total_expenses'], 2) }}</td></tr>
-        <tr><th>VAT Collected</th><td>{{ number_format($summary['vat_collected'], 2) }}</td></tr>
-        <tr><th>Net Profit</th><td><strong>{{ number_format($summary['net_profit'], 2) }}</strong></td></tr>
+        <tr><th>Gross Revenue</th><td>{{ money($summary['gross_revenue'], false) }}</td></tr>
+        <tr><th>Cost of Goods</th><td>{{ money($summary['cost_of_goods'], false) }}</td></tr>
+        <tr><th>Gross Profit</th><td>{{ money($summary['gross_profit'], false) }}</td></tr>
+        <tr><th>Total Expenses</th><td>{{ money($summary['total_expenses'], false) }}</td></tr>
+        <tr><th>VAT Collected</th><td>{{ money($summary['vat_collected'], false) }}</td></tr>
+        <tr><th>Net Profit</th><td><strong>{{ money($summary['net_profit'], false) }}</strong></td></tr>
     </table>
 </body>
 </html>

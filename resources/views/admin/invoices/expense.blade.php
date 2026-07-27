@@ -1,31 +1,76 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Expense Invoice {{ $expense->expense_id }}</title>
-    <style>
-        body { font-family: sans-serif; font-size: 13px; color: #222; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h1 { margin: 0; font-size: 22px; }
-        table.details { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        table.details th, table.details td { border: 1px solid #333; padding: 6px 10px; text-align: left; }
-        table.details th { background-color: #eee; width: 30%; }
-    </style>
-</head>
-<body>
-    @include('admin.invoices.partials.header', ['invoiceTitle' => 'Expense Invoice'])
+@extends('admin.invoices.layout', [
+    'documentTitle' => 'Expense Voucher',
+    'documentNumber' => $invoice->invoice_number,
+    'accentColor' => '#b91c1c',
+])
 
-    <table class="details">
-        <tr><th>Invoice #</th><td>{{ $invoice->invoice_number }}</td></tr>
-        <tr><th>Expense ID</th><td>{{ $expense->expense_id }}</td></tr>
-        <tr><th>Expense Head</th><td>{{ $expense->expenseHead->name }}</td></tr>
-        <tr><th>Amount</th><td>{{ number_format($expense->amount, 2) }}</td></tr>
-        <tr><th>Date</th><td>{{ $expense->expense_date->format('Y-m-d') }}</td></tr>
-        <tr><th>Payment Method</th><td>{{ ucfirst(str_replace('_', ' ', $expense->payment_method)) }}</td></tr>
-        <tr><th>Description</th><td>{{ $expense->description ?? '-' }}</td></tr>
-        @if ($expense->receipt_file)
-            <tr><th>Receipt</th><td>{{ $expense->receipt_file }}</td></tr>
-        @endif
+@section('meta')
+    <table class="meta">
+        <tr>
+            <td>
+                <span class="meta-label">Expense</span>
+                <span class="meta-value">
+                    <strong>{{ $expense->expenseHead?->name ?? '—' }}</strong><br>
+                    Ref. {{ $expense->expense_id }}
+                </span>
+            </td>
+            <td>
+                <span class="meta-label">Date</span>
+                <span class="meta-value">{{ $expense->expense_date->format('d M Y') }}</span>
+            </td>
+            <td>
+                <span class="meta-label">Paid from</span>
+                <span class="meta-value">{{ ucwords(str_replace('_', ' ', $expense->payment_method)) }}</span>
+            </td>
+        </tr>
     </table>
-</body>
-</html>
+@endsection
+
+@section('items')
+    <table class="items">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th class="num" style="width: 150px">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    {{ $expense->expenseHead?->name ?? 'Expense' }}
+                    @if ($expense->description)
+                        <span class="line-note">{{ $expense->description }}</span>
+                    @endif
+                </td>
+                <td class="num">{{ money($expense->amount, false) }}</td>
+            </tr>
+        </tbody>
+    </table>
+@endsection
+
+@section('summary')
+    <table class="totals">
+        <tr>
+            <td style="width: 55%; padding-right: 18px;">
+                <div class="in-words">
+                    <strong>Amount in words:</strong><br>
+                    {{ amount_in_words($expense->amount) }}
+                </div>
+
+                @if ($expense->receipt_file)
+                    <div style="font-size: 10px; color: #64748b;">
+                        A receipt is attached to this expense in the system.
+                    </div>
+                @endif
+            </td>
+            <td style="width: 45%;">
+                <table class="summary">
+                    <tr class="grand">
+                        <td class="label">Total paid</td>
+                        <td class="value">{{ money($expense->amount, false) }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+@endsection

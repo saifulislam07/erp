@@ -1,71 +1,159 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Purchase Invoice {{ $purchase->purchase_id }}</title>
-    <style>
-        body { font-family: sans-serif; font-size: 13px; color: #222; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h1 { margin: 0; font-size: 22px; }
-        .meta { width: 100%; margin-bottom: 20px; }
-        .meta td { vertical-align: top; padding: 2px 0; }
-        table.items { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        table.items th, table.items td { border: 1px solid #333; padding: 5px 8px; text-align: left; }
-        table.items th { background-color: #eee; }
-        table.summary { width: 40%; margin-left: auto; border-collapse: collapse; }
-        table.summary td { padding: 4px 8px; }
-        table.summary tr.grand-total td { font-weight: bold; border-top: 2px solid #333; }
-    </style>
-</head>
-<body>
-    @include('admin.invoices.partials.header', ['invoiceTitle' => 'Purchase Invoice'])
+@extends('admin.invoices.layout', [
+    'documentTitle' => 'Purchase Invoice',
+    'documentNumber' => $invoice->invoice_number,
+    'accentColor' => '#0f766e',
+])
 
+@php
+    $returned = (float) $purchase->returns->sum('total_amount');
+@endphp
+
+@section('stamp')
+    <span class="stamp stamp-{{ $purchase->payment_status }}">{{ $purchase->payment_status }}</span>
+@endsection
+
+@section('meta')
     <table class="meta">
         <tr>
             <td>
-                <strong>Invoice #:</strong> {{ $invoice->invoice_number }}<br>
-                <strong>Purchase ID:</strong> {{ $purchase->purchase_id }}<br>
-                <strong>Date:</strong> {{ $purchase->purchase_date->format('Y-m-d') }}
+                <span class="meta-label">Supplier</span>
+                <span class="meta-value">
+                    <strong>{{ $purchase->supplier?->name ?? '—' }}</strong>
+                    @if ($purchase->supplier?->company_name)
+                        <br>{{ $purchase->supplier->company_name }}
+                    @endif
+                    @if ($purchase->supplier?->phone)
+                        <br>{{ $purchase->supplier->phone }}
+                    @endif
+                    @if ($purchase->supplier?->address)
+                        <br>{{ $purchase->supplier->address }}
+                    @endif
+                </span>
             </td>
-            <td style="text-align: right;">
-                <strong>Supplier:</strong> {{ $purchase->supplier->name }}<br>
-                <strong>Supplier Phone:</strong> {{ $purchase->supplier->phone }}<br>
-                <strong>Payment Method:</strong> {{ ucfirst(str_replace('_', ' ', $purchase->payment_method)) }}
+            <td>
+                <span class="meta-label">Purchase details</span>
+                <span class="meta-value">
+                    Purchase ref. <strong>{{ $purchase->purchase_id }}</strong><br>
+                    Date {{ $purchase->purchase_date->format('d M Y') }}<br>
+                    @if ($purchase->invoice_number)
+                        Supplier invoice {{ $purchase->invoice_number }}
+                    @endif
+                </span>
+            </td>
+            <td>
+                <span class="meta-label">Payment</span>
+                <span class="meta-value">
+                    {{ ucwords(str_replace('_', ' ', $purchase->payment_method ?? '—')) }}<br>
+                    Recorded by {{ $purchase->creator?->name ?? '—' }}
+                </span>
             </td>
         </tr>
     </table>
+@endsection
 
+@section('items')
     <table class="items">
         <thead>
             <tr>
-                <th>Product</th>
-                <th>Qty</th>
-                <th>Purchase Price</th>
-                <th>VAT %</th>
-                <th>VAT Amount</th>
-                <th>Total</th>
+                <th style="width: 28px">#</th>
+                <th>Item</th>
+                <th class="num">Qty</th>
+                <th class="num">Unit cost</th>
+                <th class="num">VAT</th>
+                <th class="num">Amount</th>
             </tr>
         </thead>
         <tbody>
             @foreach ($purchase->items as $item)
                 <tr>
-                    <td>{{ $item->product->name }}</td>
-                    <td>{{ $item->quantity }}</td>
-                    <td>{{ number_format($item->purchase_price, 2) }}</td>
-                    <td>{{ number_format($item->vat_percentage, 2) }}</td>
-                    <td>{{ number_format($item->vat_amount, 2) }}</td>
-                    <td>{{ number_format($item->total_price, 2) }}</td>
+                    <td>{{ $loop->iteration }}</td>
+                    <td>
+                        {{ $item->product?->name ?? 'Deleted product' }}
+                        @if ($item->expiry_date)
+                            <span class="line-note">Expires {{ $item->expiry_date->format('d M Y') }}</span>
+                        @endif
+                    </td>
+                    <td class="num">
+                        {{ qty($item->quantity) }}
+                        @if ($item->product?->unit)
+                            <span class="line-note">{{ $item->product->unit->name }}</span>
+                        @endif
+                    </td>
+                    <td class="num">{{ money($item->purchase_price, false) }}</td>
+                    <td class="num">
+                        {{ (float) $item->vat_amount > 0 ? money($item->vat_amount, false) : '—' }}
+                        @if ((float) $item->vat_percentage > 0)
+                            <span class="line-note">{{ percent($item->vat_percentage) }}</span>
+                        @endif
+                    </td>
+                    <td class="num">{{ money($item->total_price, false) }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
+@endsection
 
-    <table class="summary">
-        <tr><td>Subtotal</td><td>{{ number_format($purchase->subtotal, 2) }}</td></tr>
-        <tr><td>VAT</td><td>{{ number_format($purchase->vat_amount, 2) }}</td></tr>
-        <tr class="grand-total"><td>Grand Total</td><td>{{ number_format($purchase->total_amount, 2) }}</td></tr>
-        <tr><td>Paid</td><td>{{ number_format($purchase->paid_amount, 2) }}</td></tr>
-        <tr><td>Due</td><td>{{ number_format($purchase->due_amount, 2) }}</td></tr>
+@section('summary')
+    <table class="totals">
+        <tr>
+            <td style="width: 55%; padding-right: 18px;">
+                <div class="in-words">
+                    <strong>Amount in words:</strong><br>
+                    {{ amount_in_words($purchase->total_amount) }}
+                </div>
+
+                @if ($returned > 0)
+                    <div style="font-size: 10px; color: #64748b; margin-bottom: 8px;">
+                        <strong style="color: #0f172a;">Returned to supplier:</strong>
+                        {{ money($returned, false) }} across
+                        {{ $purchase->returns->count() }} {{ Str::plural('return', $purchase->returns->count()) }}.
+                    </div>
+                @endif
+
+                @if ($purchase->note)
+                    <div style="font-size: 10px; color: #64748b;">
+                        <strong style="color: #0f172a;">Note:</strong> {{ $purchase->note }}
+                    </div>
+                @endif
+            </td>
+            <td style="width: 45%;">
+                <table class="summary">
+                    <tr>
+                        <td class="label">Subtotal</td>
+                        <td class="value">{{ money($purchase->subtotal, false) }}</td>
+                    </tr>
+                    @if ((float) $purchase->vat_amount > 0)
+                        <tr>
+                            <td class="label">VAT</td>
+                            <td class="value">{{ money($purchase->vat_amount, false) }}</td>
+                        </tr>
+                    @endif
+                    <tr class="grand">
+                        <td class="label">Total</td>
+                        <td class="value">{{ money($purchase->total_amount, false) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Paid</td>
+                        <td class="value">{{ money($purchase->paid_amount, false) }}</td>
+                    </tr>
+                    @if ($returned > 0)
+                        <tr>
+                            <td class="label">Returned</td>
+                            <td class="value">&minus; {{ money($returned, false) }}</td>
+                        </tr>
+                    @endif
+                    @if ((float) $purchase->due_amount > 0)
+                        <tr class="due">
+                            <td class="label">Balance payable</td>
+                            <td class="value">{{ money(max(0, (float) $purchase->due_amount - $returned), false) }}</td>
+                        </tr>
+                    @endif
+                </table>
+            </td>
+        </tr>
     </table>
-</body>
-</html>
+@endsection
+
+@section('footnote')
+    Please quote the purchase reference on all correspondence.
+@endsection

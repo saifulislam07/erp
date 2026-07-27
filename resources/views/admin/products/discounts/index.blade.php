@@ -44,7 +44,7 @@
                                 <a href="{{ route('admin.products.discounts.edit', [$product, $discount]) }}" class="btn btn-sm btn-warning">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <form action="{{ route('admin.products.discounts.destroy', [$product, $discount]) }}" method="post" class="d-inline delete-form">
+                                <form action="{{ route('admin.products.discounts.destroy', [$product, $discount]) }}" method="post" class="d-inline" data-confirm="Delete this discount?" data-confirm-button="Delete">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-danger">
@@ -60,21 +60,3 @@
     </div>
 @endsection
 
-@push('js')
-    <script>
-        $(function () {
-            $('.delete-form').on('submit', function (e) {
-                e.preventDefault();
-                const form = this;
-                Swal.fire({
-                    title: 'Are you sure?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, delete it',
-                }).then((result) => {
-                    if (result.isConfirmed) form.submit();
-                });
-            });
-        });
-    </script>
-@endpush

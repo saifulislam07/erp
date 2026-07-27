@@ -31,7 +31,7 @@
                     <td>{{ $order->order_id }}</td>
                     <td>{{ $order->client?->name }}</td>
                     <td>{{ ucfirst(str_replace('_', ' ', $order->status)) }}</td>
-                    <td>{{ number_format($order->total_amount, 2) }}</td>
+                    <td>{{ money($order->total_amount, false) }}</td>
                     <td>{{ ucfirst(str_replace('_', ' ', $order->payment_method)) }}</td>
                     <td>{{ $order->created_at->format('Y-m-d') }}</td>
                 </tr>

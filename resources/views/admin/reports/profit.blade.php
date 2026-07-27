@@ -35,12 +35,12 @@
         </div>
         <div class="card-body">
             <table class="table table-bordered">
-                <tr><th>Gross Revenue</th><td>{{ number_format($summary['gross_revenue'], 2) }}</td></tr>
-                <tr><th>Cost of Goods</th><td>{{ number_format($summary['cost_of_goods'], 2) }}</td></tr>
-                <tr><th>Gross Profit</th><td>{{ number_format($summary['gross_profit'], 2) }}</td></tr>
-                <tr><th>Total Expenses</th><td>{{ number_format($summary['total_expenses'], 2) }}</td></tr>
-                <tr><th>VAT Collected</th><td>{{ number_format($summary['vat_collected'], 2) }}</td></tr>
-                <tr class="table-success"><th>Net Profit</th><td><strong>{{ number_format($summary['net_profit'], 2) }}</strong></td></tr>
+                <tr><th>Gross Revenue</th><td>{{ money($summary['gross_revenue']) }}</td></tr>
+                <tr><th>Cost of Goods</th><td>{{ money($summary['cost_of_goods']) }}</td></tr>
+                <tr><th>Gross Profit</th><td>{{ money($summary['gross_profit']) }}</td></tr>
+                <tr><th>Total Expenses</th><td>{{ money($summary['total_expenses']) }}</td></tr>
+                <tr><th>VAT Collected</th><td>{{ money($summary['vat_collected']) }}</td></tr>
+                <tr class="table-success"><th>Net Profit</th><td><strong>{{ money($summary['net_profit']) }}</strong></td></tr>
             </table>
         </div>
     </div>

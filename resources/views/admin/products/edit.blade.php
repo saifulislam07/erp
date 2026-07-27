@@ -1,24 +1,25 @@
 @extends('layouts.admin')
 
-@section('content_title', 'Edit Product')
+@section('content_title', 'Edit '.$product->name)
 
 @section('content_body')
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Edit Product</h3>
+    <form action="{{ route('admin.products.update', $product) }}" method="post" enctype="multipart/form-data">
+        @csrf
+        @method('PUT')
+
+        @include('admin.products.form')
+
+        <div class="card">
+            <div class="card-body page-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-1"></i> Save changes
+                </button>
+                <a href="{{ route('admin.products.show', $product) }}" class="btn btn-secondary">Cancel</a>
+
+                <a href="{{ route('admin.products.discounts.index', $product) }}" class="btn btn-outline-primary ml-auto">
+                    <i class="fas fa-tags mr-1"></i> Manage discounts
+                </a>
+            </div>
         </div>
-
-        <form action="{{ route('admin.products.update', $product) }}" method="post" enctype="multipart/form-data">
-            @csrf
-            @method('PUT')
-            <div class="card-body">
-                @include('admin.products.form')
-            </div>
-
-            <div class="card-footer">
-                <button type="submit" class="btn btn-primary">Update</button>
-                <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">Cancel</a>
-            </div>
-        </form>
-    </div>
+    </form>
 @endsection

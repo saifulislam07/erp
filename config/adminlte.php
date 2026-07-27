@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'title' => 'AdminLTE 3',
+    'title' => 'ERP',
     'title_prefix' => '',
     'title_postfix' => '',
 
@@ -63,12 +63,12 @@ return [
     |
     */
 
-    'logo' => '<b>Admin</b>LTE',
-    'logo_img' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
-    'logo_img_class' => 'brand-image img-circle elevation-3',
+    'logo' => 'ERP',
+    'logo_img' => null,
+    'logo_img_class' => 'brand-image',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
-    'logo_img_alt' => 'Admin Logo',
+    'logo_img_alt' => 'Logo',
 
     /*
     |--------------------------------------------------------------------------
@@ -134,11 +134,11 @@ return [
     */
 
     'usermenu_enabled' => true,
-    'usermenu_header' => false,
+    'usermenu_header' => true,
     'usermenu_header_class' => 'bg-primary',
-    'usermenu_image' => false,
-    'usermenu_desc' => false,
-    'usermenu_profile_url' => false,
+    'usermenu_image' => true,
+    'usermenu_desc' => true,
+    'usermenu_profile_url' => true,
 
     /*
     |--------------------------------------------------------------------------
@@ -263,7 +263,7 @@ return [
     'register_url' => null,
     'password_reset_url' => 'password.request',
     'password_email_url' => 'password.email',
-    'profile_url' => false,
+    'profile_url' => 'admin.profile.edit',
     'disable_darkmode_routes' => false,
 
     /*
@@ -287,234 +287,410 @@ return [
     'laravel_js_path' => 'js/app.js',
 
     /*
-    |--------------------------------------------------------------------------
-    | Menu Items
-    |--------------------------------------------------------------------------
-    |
-    | Here we can modify the sidebar/top navigation of the admin panel.
-    |
-    | For detailed instructions you can look here:
-    | https://github.com/jeroennoten/Laravel-AdminLTE/wiki/Menu-Configuration
-    |
-    */
-
+     | Menu grouping follows the day's work rather than the database: what you
+     | sell, what you buy and stock, where the money is, and who uses the
+     | system. Each entry carries an `active` pattern because the packaged
+     | active-state check only matches a link's own URL — without them a
+     | create/edit page leaves the whole sidebar unhighlighted.
+     */
     'menu' => [
-        // Navbar items:
-        [
-            'type' => 'navbar-search',
-            'text' => 'search',
-            'topnav_right' => true,
-        ],
-
-        // Sidebar items:
         [
             'type' => 'sidebar-menu-search',
-            'text' => 'search',
+            'text' => 'Search the menu',
+            'input_name' => 'menuSearch',
         ],
         [
             'text' => 'Dashboard',
             'route' => 'admin.dashboard',
-            'icon' => 'fas fa-fw fa-tachometer-alt',
-            'icon_color' => 'info',
+            'icon' => 'fas fa-fw fa-gauge-high',
             'can' => 'dashboard.view',
+            'active' => ['admin/dashboard'],
         ],
         [
             'text' => 'Home',
             'route' => 'admin.home',
-            'icon' => 'fas fa-fw fa-home',
-            'icon_color' => 'info',
+            'icon' => 'fas fa-fw fa-house',
             'can' => 'view-home-fallback',
+            'active' => ['admin/home'],
         ],
-        ['header' => 'User Management', 'can' => ['department.view', 'role.view', 'user.view']],
+
+        ['header' => 'Selling', 'can' => ['sale.view', 'order.view', 'client.view', 'delivery.view']],
         [
-            'text' => 'Departments',
-            'route' => 'admin.departments.index',
-            'icon' => 'fas fa-fw fa-building',
-            'icon_color' => 'primary',
-            'can' => 'department.view',
+            'text' => 'Sales',
+            'icon' => 'fas fa-fw fa-cash-register',
+            'can' => 'sale.view',
+            'submenu' => [
+                [
+                    'text' => 'All sales',
+                    'route' => 'admin.sales.index',
+                    // Everything under admin/sales except the report, which is
+                    // its own entry below.
+                    'active' => ['regex:@^admin/sales(?!/report)(?!/create)@'],
+                ],
+                [
+                    'text' => 'New sale',
+                    'route' => 'admin.sales.create',
+                    'active' => ['admin/sales/create'],
+                ],
+                [
+                    'text' => 'Sale returns',
+                    'route' => 'admin.sale-returns.index',
+                    'active' => ['admin/sale-returns*'],
+                ],
+                [
+                    'text' => 'Customer dues',
+                    'route' => 'admin.customer-payments.index',
+                    'active' => ['admin/customer-payments*'],
+                ],
+                [
+                    'text' => 'Sales report',
+                    'route' => 'admin.sales.report',
+                    'active' => ['admin/sales/report*'],
+                ],
+            ],
         ],
         [
-            'text' => 'Roles',
-            'route' => 'admin.roles.index',
-            'icon' => 'fas fa-fw fa-user-shield',
-            'icon_color' => 'purple',
-            'can' => 'role.view',
+            'text' => 'Orders',
+            'icon' => 'fas fa-fw fa-cart-shopping',
+            'can' => ['order.view', 'return.view'],
+            'submenu' => [
+                [
+                    'text' => 'All orders',
+                    'route' => 'admin.orders.index',
+                    'can' => 'order.view',
+                    'active' => ['regex:@^admin/orders(?!/pending)@'],
+                ],
+                [
+                    'text' => 'Pending orders',
+                    'route' => 'admin.orders.pending',
+                    'can' => 'order.view',
+                    'active' => ['admin/orders/pending'],
+                ],
+                [
+                    'text' => 'Order returns',
+                    'route' => 'admin.returns.index',
+                    'can' => 'return.view',
+                    'active' => ['admin/returns*'],
+                ],
+                [
+                    'text' => 'Return types',
+                    'route' => 'admin.return-types.index',
+                    'can' => 'return.view',
+                    'active' => ['admin/return-types*'],
+                ],
+                [
+                    'text' => 'Client feedback',
+                    'route' => 'admin.feedbacks.index',
+                    'can' => 'return.view',
+                    'active' => ['admin/feedbacks*'],
+                ],
+            ],
         ],
         [
-            'text' => 'Employees',
-            'route' => 'admin.employees.index',
-            'icon' => 'fas fa-fw fa-user-tie',
-            'icon_color' => 'navy',
-            'can' => 'user.view',
+            'text' => 'Store & delivery',
+            'icon' => 'fas fa-fw fa-truck-fast',
+            'can' => 'delivery.view',
+            'submenu' => [
+                [
+                    'text' => 'Dispatch queue',
+                    'route' => 'admin.store.dispatch-queue',
+                    'active' => ['admin/store/dispatch*'],
+                ],
+                [
+                    'text' => 'Deliveries',
+                    'route' => 'admin.deliveries.index',
+                    'active' => ['admin/delivery*'],
+                ],
+            ],
         ],
-        ['header' => 'Modules', 'can' => [
-            'client.view', 'message.view', 'product.view', 'stock.view',
-            'purchase.view', 'sale.view', 'order.view', 'delivery.view',
-            'return.view', 'expense.view', 'cash.view', 'asset.view', 'report.view',
-        ]],
         [
-            'text' => 'Clients / Agents',
+            'text' => 'Clients & agents',
             'route' => 'admin.clients.index',
             'icon' => 'fas fa-fw fa-handshake',
-            'icon_color' => 'success',
             'can' => 'client.view',
+            'active' => ['admin/clients*'],
         ],
         [
             'text' => 'Messages',
             'route' => 'admin.messages.index',
             'icon' => 'fas fa-fw fa-comments',
-            'icon_color' => 'warning',
             'can' => 'message.view',
+            'active' => ['admin/messages*'],
         ],
+
+        ['header' => 'Buying & stock', 'can' => ['purchase.view', 'product.view', 'stock.view']],
         [
-            'text' => 'Products',
-            'icon' => 'fas fa-fw fa-box-open',
-            'icon_color' => 'orange',
-            'can' => ['product.view', 'stock.view'],
+            'text' => 'Purchases',
+            'icon' => 'fas fa-fw fa-truck-ramp-box',
+            'can' => 'purchase.view',
             'submenu' => [
-                ['text' => 'Categories', 'route' => 'admin.categories.index', 'can' => 'product.view'],
-                ['text' => 'Units', 'route' => 'admin.units.index', 'can' => 'product.view'],
-                ['text' => 'Products', 'route' => 'admin.products.index', 'can' => 'product.view'],
-                ['text' => 'Product Report', 'route' => 'admin.products.report', 'can' => 'product.view'],
                 [
-                    'text' => 'Stock',
-                    'can' => 'stock.view',
-                    'submenu' => [
-                        // Stores CRUD is admin-only at the route level (admin.only middleware).
-                        ['text' => 'Stores', 'route' => 'admin.stores.index', 'can' => 'access-system-area'],
-                        ['text' => 'Stock List', 'route' => 'admin.stocks.index', 'can' => 'stock.view'],
-                        ['text' => 'Low Quantity', 'route' => 'admin.stocks.low-quantity', 'can' => 'stock.view'],
-                        ['text' => 'Expiring (1 Month)', 'route' => 'admin.stocks.expiry.one-month', 'can' => 'stock.view'],
-                        ['text' => 'Expiring (3 Months)', 'route' => 'admin.stocks.expiry.three-month', 'can' => 'stock.view'],
-                    ],
+                    'text' => 'All purchases',
+                    'route' => 'admin.purchases.index',
+                    'active' => ['regex:@^admin/purchases(?!/report)(?!/create)@'],
+                ],
+                [
+                    'text' => 'New purchase',
+                    'route' => 'admin.purchases.create',
+                    'active' => ['admin/purchases/create'],
+                ],
+                [
+                    'text' => 'Purchase returns',
+                    'route' => 'admin.purchase-returns.index',
+                    'active' => ['admin/purchase-returns*'],
+                ],
+                [
+                    'text' => 'Supplier dues',
+                    'route' => 'admin.supplier-payments.index',
+                    'active' => ['admin/supplier-payments*'],
+                ],
+                [
+                    'text' => 'Suppliers',
+                    'route' => 'admin.suppliers.index',
+                    'active' => ['admin/suppliers*'],
+                ],
+                [
+                    'text' => 'Purchase report',
+                    'route' => 'admin.purchases.report',
+                    'active' => ['admin/purchases/report*'],
                 ],
             ],
         ],
         [
-            'text' => 'Purchases',
-            'icon' => 'fas fa-fw fa-truck-loading',
-            'icon_color' => 'maroon',
-            'can' => 'purchase.view',
+            'text' => 'Catalogue',
+            'icon' => 'fas fa-fw fa-box-open',
+            'can' => 'product.view',
             'submenu' => [
-                ['text' => 'Suppliers', 'route' => 'admin.suppliers.index', 'can' => 'purchase.view'],
-                ['text' => 'Purchases', 'route' => 'admin.purchases.index', 'can' => 'purchase.view'],
-                ['text' => 'New Purchase', 'route' => 'admin.purchases.create', 'can' => 'purchase.view'],
-                ['text' => 'Purchase Report', 'route' => 'admin.purchases.report', 'can' => 'purchase.view'],
+                [
+                    'text' => 'Products',
+                    'route' => 'admin.products.index',
+                    'active' => ['regex:@^admin/products(?!/report)(?!/create)@'],
+                ],
+                [
+                    'text' => 'Add product',
+                    'route' => 'admin.products.create',
+                    'active' => ['admin/products/create'],
+                ],
+                [
+                    'text' => 'Categories',
+                    'route' => 'admin.categories.index',
+                    'active' => ['admin/categories*'],
+                ],
+                [
+                    'text' => 'Units',
+                    'route' => 'admin.units.index',
+                    'active' => ['admin/units*'],
+                ],
+                [
+                    'text' => 'Product report',
+                    'route' => 'admin.products.report',
+                    'active' => ['admin/products/report*'],
+                ],
             ],
         ],
         [
-            'text' => 'Sales',
-            'icon' => 'fas fa-fw fa-cash-register',
-            'icon_color' => 'lime',
-            'can' => 'sale.view',
+            'text' => 'Stock',
+            'icon' => 'fas fa-fw fa-warehouse',
+            'can' => 'stock.view',
             'submenu' => [
-                ['text' => 'Sales', 'route' => 'admin.sales.index', 'can' => 'sale.view'],
-                ['text' => 'New Sale', 'route' => 'admin.sales.create', 'can' => 'sale.view'],
-                ['text' => 'Sale Report', 'route' => 'admin.sales.report', 'can' => 'sale.view'],
+                [
+                    'text' => 'Stock list',
+                    'route' => 'admin.stocks.index',
+                    'active' => ['regex:@^admin/stocks(?!/low-quantity)(?!/expiry)@'],
+                ],
+                [
+                    'text' => 'Low quantity',
+                    'route' => 'admin.stocks.low-quantity',
+                    'active' => ['admin/stocks/low-quantity'],
+                ],
+                [
+                    'text' => 'Expiring in 1 month',
+                    'route' => 'admin.stocks.expiry.one-month',
+                    'active' => ['admin/stocks/expiry/one-month'],
+                ],
+                [
+                    'text' => 'Expiring in 3 months',
+                    'route' => 'admin.stocks.expiry.three-month',
+                    'active' => ['admin/stocks/expiry/three-month'],
+                ],
+                [
+                    // Store CRUD is admin-only at the route level.
+                    'text' => 'Stores',
+                    'route' => 'admin.stores.index',
+                    'can' => 'access-system-area',
+                    'active' => ['admin/stores*'],
+                ],
             ],
         ],
+
+        ['header' => 'Money', 'can' => ['cash.view', 'expense.view', 'asset.view']],
         [
-            'text' => 'Orders',
-            'route' => 'admin.orders.index',
-            'icon' => 'fas fa-fw fa-shopping-cart',
-            'icon_color' => 'danger',
-            'can' => 'order.view',
-        ],
-        [
-            'text' => 'Store & Delivery',
-            'icon' => 'fas fa-fw fa-shipping-fast',
-            'icon_color' => 'teal',
-            'can' => 'delivery.view',
+            'text' => 'Cash & bank',
+            'icon' => 'fas fa-fw fa-wallet',
+            'can' => 'cash.view',
             'submenu' => [
-                ['text' => 'Dispatch Queue', 'route' => 'admin.store.dispatch-queue', 'can' => 'delivery.view'],
-                ['text' => 'Deliveries', 'route' => 'admin.deliveries.index', 'can' => 'delivery.view'],
-            ],
-        ],
-        [
-            'text' => 'Returns',
-            'icon' => 'fas fa-fw fa-undo',
-            'icon_color' => 'fuchsia',
-            'can' => 'return.view',
-            'submenu' => [
-                ['text' => 'All Returns', 'route' => 'admin.returns.index', 'can' => 'return.view'],
-                ['text' => 'Return Types', 'route' => 'admin.return-types.index', 'can' => 'return.view'],
-                ['text' => 'Client Feedback', 'route' => 'admin.feedbacks.index', 'can' => 'return.view'],
+                [
+                    'text' => 'Overview',
+                    'route' => 'admin.cash-bank.index',
+                    'active' => ['admin/cash-bank'],
+                ],
+                [
+                    'text' => 'Transactions',
+                    'route' => 'admin.cash-bank.transactions',
+                    'active' => ['admin/cash-bank/transactions'],
+                ],
+                [
+                    'text' => 'Transfer money',
+                    'route' => 'admin.cash-bank.transfer.form',
+                    'active' => ['admin/cash-bank/transfer'],
+                ],
+                [
+                    'text' => 'Transfer history',
+                    'route' => 'admin.cash-bank.transfer-history',
+                    'active' => ['admin/cash-bank/transfer-history'],
+                ],
+                [
+                    'text' => 'Payables',
+                    'route' => 'admin.accounts.payable',
+                    'active' => ['admin/accounts/payable'],
+                ],
+                [
+                    'text' => 'Receivables',
+                    'route' => 'admin.accounts.receivable',
+                    'active' => ['admin/accounts/receivable'],
+                ],
+                [
+                    'text' => 'Salaries',
+                    'route' => 'admin.salaries.index',
+                    'active' => ['admin/salaries*'],
+                ],
             ],
         ],
         [
             'text' => 'Expenses',
-            'icon' => 'fas fa-fw fa-money-bill-wave',
-            'icon_color' => 'warning',
+            'icon' => 'fas fa-fw fa-receipt',
             'can' => 'expense.view',
             'submenu' => [
-                ['text' => 'Expenses', 'route' => 'admin.expenses.index', 'can' => 'expense.view'],
-                ['text' => 'Expense Heads', 'route' => 'admin.expense-heads.index', 'can' => 'expense.view'],
-                ['text' => 'Expense Report', 'route' => 'admin.expenses.report', 'can' => 'expense.view'],
-            ],
-        ],
-        [
-            'text' => 'Cash & Bank',
-            'icon' => 'fas fa-fw fa-university',
-            'icon_color' => 'olive',
-            'can' => 'cash.view',
-            'submenu' => [
-                ['text' => 'Overview', 'route' => 'admin.cash-bank.index', 'can' => 'cash.view'],
-                ['text' => 'Transactions', 'route' => 'admin.cash-bank.transactions', 'can' => 'cash.view'],
-                ['text' => 'Transfer', 'route' => 'admin.cash-bank.transfer.form', 'can' => 'cash.view'],
-                ['text' => 'Transfer History', 'route' => 'admin.cash-bank.transfer-history', 'can' => 'cash.view'],
-                ['text' => 'Accounts Payable', 'route' => 'admin.accounts.payable', 'can' => 'cash.view'],
-                ['text' => 'Accounts Receivable', 'route' => 'admin.accounts.receivable', 'can' => 'cash.view'],
-                ['text' => 'Salaries', 'route' => 'admin.salaries.index', 'can' => 'cash.view'],
+                [
+                    'text' => 'All expenses',
+                    'route' => 'admin.expenses.index',
+                    'active' => ['regex:@^admin/expenses(?!/report)(?!/create)@'],
+                ],
+                [
+                    'text' => 'Record expense',
+                    'route' => 'admin.expenses.create',
+                    'active' => ['admin/expenses/create'],
+                ],
+                [
+                    'text' => 'Expense heads',
+                    'route' => 'admin.expense-heads.index',
+                    'active' => ['admin/expense-heads*'],
+                ],
+                [
+                    'text' => 'Expense report',
+                    'route' => 'admin.expenses.report',
+                    'active' => ['admin/expenses/report*'],
+                ],
             ],
         ],
         [
             'text' => 'Assets',
-            'icon' => 'fas fa-fw fa-boxes',
-            'icon_color' => 'indigo',
+            'icon' => 'fas fa-fw fa-building-columns',
             'can' => 'asset.view',
             'submenu' => [
-                ['text' => 'Assets', 'route' => 'admin.assets.index', 'can' => 'asset.view'],
-                ['text' => 'Asset Report', 'route' => 'admin.assets.report', 'can' => 'asset.view'],
+                [
+                    'text' => 'All assets',
+                    'route' => 'admin.assets.index',
+                    'active' => ['regex:@^admin/assets(?!/report)@'],
+                ],
+                [
+                    'text' => 'Asset report',
+                    'route' => 'admin.assets.report',
+                    'active' => ['admin/assets/report*'],
+                ],
             ],
         ],
+
+        ['header' => 'Insight', 'can' => 'report.view'],
         [
-            'text' => 'Reports & Invoices',
-            'icon' => 'fas fa-fw fa-chart-bar',
-            'icon_color' => 'cyan',
+            'text' => 'Reports',
+            'icon' => 'fas fa-fw fa-chart-column',
             'can' => 'report.view',
             // Each entry is gated by the permission its own route enforces, not
             // by report.view alone, so no link here can 403 on click.
             'submenu' => [
-                ['text' => 'Reports Hub', 'route' => 'admin.reports.index', 'can' => 'report.view'],
-                ['text' => 'Sales Report', 'route' => 'admin.sales.report', 'can' => 'sale.view'],
-                ['text' => 'Purchase Report', 'route' => 'admin.purchases.report', 'can' => 'purchase.view'],
-                ['text' => 'Expense Report', 'route' => 'admin.expenses.report', 'can' => 'expense.view'],
-                ['text' => 'Profit Report', 'route' => 'admin.reports.profit', 'can' => 'report.view'],
-                ['text' => 'Stock Report', 'route' => 'admin.reports.stock', 'can' => 'report.view'],
-                ['text' => 'Order Report', 'route' => 'admin.reports.orders', 'can' => 'report.view'],
+                [
+                    'text' => 'Reports hub',
+                    'route' => 'admin.reports.index',
+                    'can' => 'report.view',
+                    'active' => ['admin/reports'],
+                ],
+                [
+                    'text' => 'Profit & loss',
+                    'route' => 'admin.reports.profit',
+                    'can' => 'report.view',
+                    'active' => ['admin/reports/profit*'],
+                ],
+                [
+                    'text' => 'Stock valuation',
+                    'route' => 'admin.reports.stock',
+                    'can' => 'report.view',
+                    'active' => ['admin/reports/stock*'],
+                ],
+                [
+                    'text' => 'Order report',
+                    'route' => 'admin.reports.orders',
+                    'can' => 'report.view',
+                    'active' => ['admin/reports/orders*'],
+                ],
             ],
         ],
-        ['header' => 'System', 'can' => 'access-system-area'],
+
+        ['header' => 'People', 'can' => ['user.view', 'department.view', 'role.view']],
         [
-            'text' => 'Activity Log',
-            'route' => 'admin.activity-log.index',
-            'icon' => 'fas fa-fw fa-history',
-            'icon_color' => 'secondary',
-            'can' => 'access-system-area',
+            'text' => 'Employees',
+            'route' => 'admin.employees.index',
+            'icon' => 'fas fa-fw fa-user-tie',
+            'can' => 'user.view',
+            'active' => ['admin/employees*'],
         ],
+        [
+            'text' => 'Departments',
+            'route' => 'admin.departments.index',
+            'icon' => 'fas fa-fw fa-sitemap',
+            'can' => 'department.view',
+            'active' => ['admin/departments*'],
+        ],
+        [
+            'text' => 'Roles & permissions',
+            'route' => 'admin.roles.index',
+            'icon' => 'fas fa-fw fa-user-shield',
+            'can' => 'role.view',
+            'active' => ['admin/roles*'],
+        ],
+
+        ['header' => 'System', 'can' => 'access-system-area'],
         [
             'text' => 'Settings',
             'route' => 'admin.settings.index',
-            'icon' => 'fas fa-fw fa-cogs',
-            'icon_color' => 'gray',
+            'icon' => 'fas fa-fw fa-gear',
             'can' => 'access-system-area',
+            'active' => ['admin/settings*'],
         ],
+        [
+            'text' => 'Activity log',
+            'route' => 'admin.activity-log.index',
+            'icon' => 'fas fa-fw fa-clock-rotate-left',
+            'can' => 'access-system-area',
+            'active' => ['admin/activity-log*'],
+        ],
+
         ['header' => 'Account'],
         [
-            'text' => 'Change Password',
-            'route' => 'admin.password.edit',
-            'icon' => 'fas fa-fw fa-lock',
-            'icon_color' => 'pink',
+            'text' => 'My profile',
+            'route' => 'admin.profile.edit',
+            'icon' => 'fas fa-fw fa-circle-user',
+            'active' => ['admin/profile*', 'admin/password/change'],
         ],
     ],
 
@@ -595,8 +771,8 @@ return [
             'files' => [
                 [
                     'type' => 'js',
-                    'asset' => false,
-                    'location' => '//cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
+                    'asset' => true,
+                    'location' => 'assets/js/chart.umd.min.js',
                 ],
             ],
         ],

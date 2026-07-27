@@ -59,7 +59,7 @@
                             <td>{{ $product->unique_id }}</td>
                             <td>{{ $product->name }}</td>
                             <td>{{ $product->category?->name }}</td>
-                            <td>{{ $product->unit?->symbol }}</td>
+                            <td>{{ $product->unit?->name }}</td>
                             <td>{{ $product->mrp_price }}</td>
                             <td>{{ $product->purchase_price }}</td>
                             <td>{{ $product->sale_price }}</td>

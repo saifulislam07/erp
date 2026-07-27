@@ -116,6 +116,6 @@
         <span class="invalid-feedback d-block">{{ $message }}</span>
     @enderror
     @if (!empty($asset?->invoice_file))
-        <div class="mt-1"><a href="{{ asset('storage/'.$asset->invoice_file) }}" target="_blank">View current invoice</a></div>
+        <div class="mt-1"><a href="{{ media_url($asset->invoice_file) }}" target="_blank">View current invoice</a></div>
     @endif
 </div>

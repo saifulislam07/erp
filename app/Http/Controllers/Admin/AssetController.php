@@ -6,15 +6,17 @@ use App\Exports\AssetsExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AssetRequest;
 use App\Models\Asset;
+use App\Services\MediaService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 
 class AssetController extends Controller
 {
+    public function __construct(private readonly MediaService $media) {}
+
     public function index(Request $request): View
     {
         $query = Asset::query();
@@ -47,7 +49,7 @@ class AssetController extends Controller
         $data['created_by'] = $request->user()->id;
 
         if ($request->hasFile('invoice_file')) {
-            $data['invoice_file'] = $request->file('invoice_file')->store('asset-invoices', 'public');
+            $data['invoice_file'] = $this->media->store($request->file('invoice_file'), 'assets');
         }
 
         Asset::create($data);
@@ -70,11 +72,9 @@ class AssetController extends Controller
         $data = $request->validated();
 
         if ($request->hasFile('invoice_file')) {
-            if ($asset->invoice_file) {
-                Storage::disk('public')->delete($asset->invoice_file);
-            }
+            $this->media->delete($asset->invoice_file);
 
-            $data['invoice_file'] = $request->file('invoice_file')->store('asset-invoices', 'public');
+            $data['invoice_file'] = $this->media->store($request->file('invoice_file'), 'assets');
         }
 
         $asset->update($data);

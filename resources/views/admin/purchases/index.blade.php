@@ -107,7 +107,7 @@
                                 <a href="{{ route('admin.purchases.returns.index', $purchase) }}" class="btn btn-sm btn-secondary">
                                     <i class="fas fa-undo"></i>
                                 </a>
-                                <form action="{{ route('admin.purchases.destroy', $purchase) }}" method="post" class="d-inline delete-form">
+                                <form action="{{ route('admin.purchases.destroy', $purchase) }}" method="post" class="d-inline" data-confirm="Delete this purchase?" data-confirm-text="This will reverse the stock and payment for this purchase." data-confirm-button="Delete">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-danger">
@@ -128,19 +128,6 @@
         $(function () {
             $('#purchases-table').DataTable();
 
-            $('.delete-form').on('submit', function (e) {
-                e.preventDefault();
-                const form = this;
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: 'This will reverse the stock and payment for this purchase.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, delete it',
-                }).then((result) => {
-                    if (result.isConfirmed) form.submit();
-                });
-            });
         });
     </script>
 @endpush

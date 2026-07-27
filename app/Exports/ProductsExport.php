@@ -29,7 +29,7 @@ class ProductsExport implements FromCollection, WithHeadings, WithMapping
             $product->unique_id,
             $product->name,
             $product->category?->name,
-            $product->unit?->symbol,
+            $product->unit?->name,
             $product->mrp_price,
             $product->purchase_price,
             $product->sale_price,

@@ -38,7 +38,7 @@
                                     <i class="fas fa-edit"></i>
                                 </a>
                                 <form action="{{ route('admin.departments.destroy', $department) }}" method="post"
-                                    class="d-inline delete-form">
+                                    class="d-inline" data-confirm="Delete this department?" data-confirm-text="This department will be soft deleted." data-confirm-button="Delete">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-danger">
@@ -59,22 +59,6 @@
         $(function () {
             $('#departments-table').DataTable();
 
-            $('.delete-form').on('submit', function (e) {
-                e.preventDefault();
-                const form = this;
-
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: 'This department will be soft deleted.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, delete it',
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
-                });
-            });
         });
     </script>
 @endpush

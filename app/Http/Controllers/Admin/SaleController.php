@@ -6,7 +6,6 @@ use App\Exports\SalesExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SaleRequest;
 use App\Models\Account;
-use App\Models\Client;
 use App\Models\Sale;
 use App\Models\Store;
 use App\Services\CashBankService;
@@ -23,8 +22,7 @@ class SaleController extends Controller
     public function __construct(
         private readonly StockService $stockService,
         private readonly CashBankService $cashBankService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {

@@ -12,4 +12,6 @@
 12. purchase মডিউলের সাথে রিটার্ন লিস্ট লাগবে, same for sale
 13. কোন সাপ্লায়ার কতো পাবে, এবং তাদের পেমেন্ট সিস্টেম। সেইম কাস্টমার ।
 14. SMTP, invoice mail, password reset etc
-15. admin profile
+15. admin profile, logo set admin, login page if exist
+16. আমার মনে হচ্ছে ফাংশনাল এবং ui সেকশনে অনেক কিছু বুঝা যায়না, ইজি টু ইউজ না। এবং হিসাবে গোলমাল আছে।
+সবকিছু গুছিয়ে দাও।

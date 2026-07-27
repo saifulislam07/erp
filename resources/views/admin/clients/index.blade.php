@@ -46,14 +46,14 @@
                                 <a href="{{ route('admin.clients.edit', $client) }}" class="btn btn-sm btn-warning">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <form action="{{ route('admin.clients.reset-password', $client) }}" method="post" class="d-inline reset-form">
+                                <form action="{{ route('admin.clients.reset-password', $client) }}" method="post" class="d-inline" data-confirm="Reset password?" data-confirm-text="A new random password will be generated and emailed to the client." data-confirm-button="Yes, reset it" data-confirm-danger="0">
                                     @csrf
                                     <button type="submit" class="btn btn-sm btn-info">
                                         <i class="fas fa-key"></i>
                                     </button>
                                 </form>
                                 <form action="{{ route('admin.clients.destroy', $client) }}" method="post"
-                                    class="d-inline delete-form">
+                                    class="d-inline" data-confirm="Delete this client?" data-confirm-text="This client will be soft deleted." data-confirm-button="Delete">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-danger">
@@ -74,33 +74,6 @@
         $(function () {
             $('#clients-table').DataTable();
 
-            $('.delete-form').on('submit', function (e) {
-                e.preventDefault();
-                const form = this;
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: 'This client will be soft deleted.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, delete it',
-                }).then((result) => {
-                    if (result.isConfirmed) form.submit();
-                });
-            });
-
-            $('.reset-form').on('submit', function (e) {
-                e.preventDefault();
-                const form = this;
-                Swal.fire({
-                    title: 'Reset password?',
-                    text: 'A new random password will be generated and emailed to the client.',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, reset it',
-                }).then((result) => {
-                    if (result.isConfirmed) form.submit();
-                });
-            });
         });
     </script>
 @endpush

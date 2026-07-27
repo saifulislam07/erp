@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\RoleRequest;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
@@ -90,7 +91,7 @@ class RoleController extends Controller
      * All permissions grouped by their module prefix (e.g. "product.view" -> "product"),
      * in the fixed module display order defined in self::MODULES.
      *
-     * @return array<string, array{label: string, permissions: \Illuminate\Support\Collection}>
+     * @return array<string, array{label: string, permissions: Collection}>
      */
     private function groupedPermissions(): array
     {

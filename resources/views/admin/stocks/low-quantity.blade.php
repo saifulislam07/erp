@@ -30,7 +30,7 @@
                             <tr class="table-warning">
                                 <td>{{ $product->name }} ({{ $product->unique_id }})</td>
                                 <td>{{ $product->category?->name }}</td>
-                                <td>{{ $product->unit?->symbol }}</td>
+                                <td>{{ $product->unit?->name }}</td>
                                 <td>{{ $product->total_stock }}</td>
                                 <td>{{ $product->min_stock_threshold }}</td>
                             </tr>

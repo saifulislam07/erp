@@ -54,7 +54,7 @@
                                     <i class="fas fa-key"></i>
                                 </button>
                                 <form action="{{ route('admin.employees.destroy', $employee) }}" method="post"
-                                    class="d-inline delete-form">
+                                    class="d-inline" data-confirm="Delete this employee?" data-confirm-text="This employee will be soft deleted." data-confirm-button="Delete">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-danger">
@@ -101,23 +101,6 @@
     <script>
         $(function () {
             $('#employees-table').DataTable();
-
-            $('.delete-form').on('submit', function (e) {
-                e.preventDefault();
-                const form = this;
-
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: 'This employee will be soft deleted.',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, delete it',
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
-                });
-            });
 
             $('.reset-password-btn').on('click', function () {
                 $('#reset-password-form').attr('action', $(this).data('url'));

@@ -49,7 +49,12 @@ class MessageController extends Controller
         return view('admin.messages.index', compact('conversations', 'activeClient', 'messages'));
     }
 
-    public function show(Request $request, Client $client): View|JsonResponse
+    /**
+     * Opening a conversation marks it read; the HTML request then bounces back
+     * to the inbox with that client selected, so the return type covers the
+     * redirect as well as the JSON poll.
+     */
+    public function show(Request $request, Client $client): View|JsonResponse|RedirectResponse
     {
         Message::where('sender_type', 'client')
             ->where('sender_id', $client->id)

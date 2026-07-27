@@ -43,7 +43,7 @@
                             <i class="fas fa-comments"></i> Messages
                         </a>
                     @endcan
-                    <form action="{{ route('admin.clients.reset-password', $client) }}" method="post" class="d-inline reset-form">
+                    <form action="{{ route('admin.clients.reset-password', $client) }}" method="post" class="d-inline" data-confirm="Reset password?" data-confirm-text="A new random password will be generated and emailed to the client." data-confirm-button="Yes, reset it" data-confirm-danger="0">
                         @csrf
                         <button type="submit" class="btn btn-secondary btn-sm">
                             <i class="fas fa-key"></i> Reset Password
@@ -123,7 +123,7 @@
                                                     {{ ucfirst(str_replace('_', ' ', $order->status)) }}
                                                 </span>
                                             </td>
-                                            <td class="text-right">{{ number_format($order->total_amount, 2) }}</td>
+                                            <td class="text-right">{{ money($order->total_amount) }}</td>
                                             <td class="text-right">
                                                 <a href="{{ route('admin.orders.show', $order) }}" class="btn btn-xs btn-primary">
                                                     <i class="fas fa-eye"></i>
@@ -163,8 +163,8 @@
                                             <td>{{ $sale->sale_id }}</td>
                                             <td>{{ $sale->sale_date?->format('Y-m-d') ?? $sale->created_at->format('Y-m-d') }}</td>
                                             <td>{{ ucfirst(str_replace('_', ' ', $sale->payment_status)) }}</td>
-                                            <td class="text-right">{{ number_format($sale->total_amount, 2) }}</td>
-                                            <td class="text-right">{{ number_format($sale->due_amount, 2) }}</td>
+                                            <td class="text-right">{{ money($sale->total_amount) }}</td>
+                                            <td class="text-right">{{ money($sale->due_amount) }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -213,22 +213,3 @@
     </div>
 @endsection
 
-@push('js')
-    <script>
-        $(function () {
-            $('.reset-form').on('submit', function (e) {
-                e.preventDefault();
-                const form = this;
-                Swal.fire({
-                    title: 'Reset password?',
-                    text: 'A new random password will be generated and emailed to the client.',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, reset it',
-                }).then((result) => {
-                    if (result.isConfirmed) form.submit();
-                });
-            });
-        });
-    </script>
-@endpush

@@ -12,7 +12,6 @@ class Unit extends Model
 
     protected $fillable = [
         'name',
-        'symbol',
     ];
 
     public function products(): HasMany

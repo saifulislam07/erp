@@ -8,18 +8,19 @@ use App\Http\Requests\Admin\ExpenseRequest;
 use App\Models\Expense;
 use App\Models\ExpenseHead;
 use App\Services\CashBankService;
+use App\Services\MediaService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ExpenseController extends Controller
 {
-    public function __construct(private readonly CashBankService $cashBankService)
-    {
-    }
+    public function __construct(
+        private readonly CashBankService $cashBankService,
+        private readonly MediaService $media,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -57,7 +58,7 @@ class ExpenseController extends Controller
     public function store(ExpenseRequest $request): RedirectResponse
     {
         $receiptPath = $request->hasFile('receipt_file')
-            ? $request->file('receipt_file')->store('expense-receipts', 'public')
+            ? $this->media->store($request->file('receipt_file'), 'expenses')
             : null;
 
         $expense = Expense::create([
@@ -101,11 +102,9 @@ class ExpenseController extends Controller
         );
 
         if ($request->hasFile('receipt_file')) {
-            if ($expense->receipt_file) {
-                Storage::disk('public')->delete($expense->receipt_file);
-            }
+            $this->media->delete($expense->receipt_file);
 
-            $expense->receipt_file = $request->file('receipt_file')->store('expense-receipts', 'public');
+            $expense->receipt_file = $this->media->store($request->file('receipt_file'), 'expenses');
         }
 
         $expense->update([

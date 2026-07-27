@@ -87,7 +87,7 @@ class OrderController extends Controller
             $paymentReceiptPath = null;
 
             if ($request->hasFile('payment_receipt')) {
-                $paymentReceiptPath = $request->file('payment_receipt')->store('payment-receipts', 'public');
+                $paymentReceiptPath = app(\App\Services\MediaService::class)->store($request->file('payment_receipt'), 'payment-receipts');
             }
 
             $totalAmount = $subtotal - $discountAmount + $vatAmount + self::DELIVERY_CHARGE;

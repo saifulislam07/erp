@@ -9,7 +9,7 @@
         </div>
 
         <div class="card-body">
-            <p>Cash Balance: <strong>{{ number_format($cashBalance, 2) }}</strong> | Bank Balance: <strong>{{ number_format($bankBalance, 2) }}</strong></p>
+            <p>Cash Balance: <strong>{{ money($cashBalance) }}</strong> | Bank Balance: <strong>{{ money($bankBalance) }}</strong></p>
         </div>
 
         <form action="{{ route('admin.cash-bank.transfer') }}" method="post">

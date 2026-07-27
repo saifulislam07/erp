@@ -28,7 +28,7 @@
                     <th>Payment Receipt</th>
                     <td>
                         @if ($order->payment_receipt)
-                            <a href="{{ asset('storage/'.$order->payment_receipt) }}" target="_blank">View Receipt</a>
+                            <a href="{{ media_url($order->payment_receipt) }}" target="_blank">View Receipt</a>
                         @else
                             -
                         @endif

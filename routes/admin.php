@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AssetController;
 use App\Http\Controllers\Admin\CashBankController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ClientController;
+use App\Http\Controllers\Admin\CustomerPaymentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\DepartmentController;
@@ -21,20 +22,24 @@ use App\Http\Controllers\Admin\OrderReturnController;
 use App\Http\Controllers\Admin\PasswordController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProductDiscountController;
+use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\PurchaseController;
 use App\Http\Controllers\Admin\PurchaseReturnController;
+use App\Http\Controllers\Admin\PurchaseReturnListController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ReturnTypeController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SalaryController;
 use App\Http\Controllers\Admin\SaleController;
+use App\Http\Controllers\Admin\SaleReturnController;
 use App\Http\Controllers\Admin\SearchController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\StoreController;
 use App\Http\Controllers\Admin\StoreDispatchController;
 use App\Http\Controllers\Admin\SupplierController;
+use App\Http\Controllers\Admin\SupplierPaymentController;
 use App\Http\Controllers\Admin\UnitController;
 use Illuminate\Support\Facades\Route;
 
@@ -47,7 +52,14 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     });
 
-    Route::get('password/change', [PasswordController::class, 'edit'])->name('password.edit');
+    // Every signed-in user manages their own account here; nothing on these
+    // routes can reach another user's record.
+    Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+
+    // Kept so existing links and bookmarks still work.
+    Route::get('password/change', fn () => redirect()->route('admin.profile.edit'))->name('password.edit');
     Route::put('password/change', [PasswordController::class, 'update'])->name('password.update');
 
     Route::middleware('check.permission:department.view')->group(function () {
@@ -157,6 +169,11 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::resource('purchases', PurchaseController::class);
     });
 
+    // Module-level list of every purchase return, independent of one purchase.
+    Route::middleware('check.permission:purchase.view')->group(function () {
+        Route::get('purchase-returns', [PurchaseReturnListController::class, 'index'])->name('purchase-returns.index');
+    });
+
     Route::get('purchases/{purchase}/returns', [PurchaseReturnController::class, 'index'])->name('purchases.returns.index');
     Route::get('purchases/{purchase}/returns/create', [PurchaseReturnController::class, 'create'])->name('purchases.returns.create');
     Route::post('purchases/{purchase}/returns', [PurchaseReturnController::class, 'store'])->name('purchases.returns.store');
@@ -169,6 +186,17 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('sales/report/pdf', [SaleController::class, 'reportPdf'])->name('sales.report.pdf');
 
     Route::resource('sales', SaleController::class);
+
+    /*
+     * Sale returns. `sale-returns` is its own prefix rather than nesting under
+     * `sales/{sale}` so the module-level list has a stable URL; creating one
+     * still starts from a specific sale.
+     */
+    Route::get('sale-returns', [SaleReturnController::class, 'index'])->name('sale-returns.index');
+    Route::get('sales/{sale}/return', [SaleReturnController::class, 'create'])->name('sale-returns.create');
+    Route::post('sales/{sale}/return', [SaleReturnController::class, 'store'])->name('sale-returns.store');
+    Route::get('sale-returns/{saleReturn}', [SaleReturnController::class, 'show'])->name('sale-returns.show');
+    Route::delete('sale-returns/{saleReturn}', [SaleReturnController::class, 'destroy'])->name('sale-returns.destroy');
 
     Route::get('orders/pending', [OrderController::class, 'pending'])->name('orders.pending');
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
@@ -197,6 +225,29 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     Route::middleware('check.permission:cash.view')->group(function () {
         Route::resource('salaries', SalaryController::class)->only(['index', 'create', 'store', 'show']);
+    });
+
+    /*
+     * Party ledgers. Both controllers gate themselves on the permission of the
+     * side they report on (purchase.view / sale.view), so no middleware here.
+     * `history` must stay above `{party}` or it is matched as a party id.
+     */
+    Route::prefix('supplier-payments')->name('supplier-payments.')->group(function () {
+        Route::get('/', [SupplierPaymentController::class, 'index'])->name('index');
+        Route::get('history', [SupplierPaymentController::class, 'history'])->name('history');
+        Route::get('{party}/ledger', [SupplierPaymentController::class, 'ledger'])->name('ledger');
+        Route::get('{party}/pay', [SupplierPaymentController::class, 'create'])->name('create');
+        Route::post('{party}/pay', [SupplierPaymentController::class, 'store'])->name('store');
+        Route::delete('payment/{payment}', [SupplierPaymentController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('customer-payments')->name('customer-payments.')->group(function () {
+        Route::get('/', [CustomerPaymentController::class, 'index'])->name('index');
+        Route::get('history', [CustomerPaymentController::class, 'history'])->name('history');
+        Route::get('{party}/ledger', [CustomerPaymentController::class, 'ledger'])->name('ledger');
+        Route::get('{party}/receive', [CustomerPaymentController::class, 'create'])->name('create');
+        Route::post('{party}/receive', [CustomerPaymentController::class, 'store'])->name('store');
+        Route::delete('payment/{payment}', [CustomerPaymentController::class, 'destroy'])->name('destroy');
     });
 
     Route::middleware('check.permission:delivery.view')->group(function () {
@@ -256,6 +307,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     });
 
     Route::middleware('check.permission:invoice.view')->group(function () {
+        Route::post('invoices/{type}/{id}/send', [InvoiceController::class, 'send'])->name('invoices.send');
         Route::get('invoices/sale/{sale}', [InvoiceController::class, 'sale'])->name('invoices.sale');
         Route::get('invoices/purchase/{purchase}', [InvoiceController::class, 'purchase'])->name('invoices.purchase');
         Route::get('invoices/expense/{expense}', [InvoiceController::class, 'expense'])->name('invoices.expense');
@@ -267,5 +319,6 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
         Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
         Route::post('settings', [SettingsController::class, 'update'])->name('settings.update');
+        Route::post('settings/test-mail', [SettingsController::class, 'testMail'])->name('settings.test-mail');
     });
 });

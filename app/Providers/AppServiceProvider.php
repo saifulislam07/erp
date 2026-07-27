@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Support\MailSettings;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -21,6 +22,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // SMTP details live in the Settings module so an administrator can
+        // change the mail server without a deploy. Anything left blank there
+        // falls back to config/.env.
+        MailSettings::apply();
+
         // Super admins bypass every ability. This mirrors the `is_admin` short
         // circuit already present in every policy and in the AdminOnly /
         // CheckPermission middleware, so sidebar `can` filters stay consistent

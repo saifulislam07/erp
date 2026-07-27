@@ -42,9 +42,9 @@
         <div class="card-body">
             <table class="table table-sm">
                 @foreach ($byHead as $headName => $total)
-                    <tr><th>{{ $headName }}</th><td>{{ number_format($total, 2) }}</td></tr>
+                    <tr><th>{{ $headName }}</th><td>{{ money($total) }}</td></tr>
                 @endforeach
-                <tr><th>Grand Total</th><td>{{ number_format($grandTotal, 2) }}</td></tr>
+                <tr><th>Grand Total</th><td>{{ money($grandTotal) }}</td></tr>
             </table>
         </div>
     </div>

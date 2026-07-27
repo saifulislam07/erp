@@ -1,19 +1,15 @@
 @php $unit = $unit ?? null; @endphp
 
 <div class="form-group">
-    <label for="name">Name</label>
-    <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror"
-        value="{{ old('name', $unit->name ?? '') }}">
+    <label for="name">Unit name</label>
+    <input type="text" name="name" id="name" required maxlength="255" autofocus
+        class="form-control @error('name') is-invalid @enderror"
+        value="{{ old('name', $unit->name ?? '') }}"
+        placeholder="e.g. Kilogram, Piece, Litre, Box">
     @error('name')
         <span class="invalid-feedback">{{ $message }}</span>
     @enderror
-</div>
-
-<div class="form-group">
-    <label for="symbol">Symbol</label>
-    <input type="text" name="symbol" id="symbol" class="form-control @error('symbol') is-invalid @enderror"
-        value="{{ old('symbol', $unit->symbol ?? '') }}">
-    @error('symbol')
-        <span class="invalid-feedback">{{ $message }}</span>
-    @enderror
+    <small class="form-text text-muted">
+        This is how the unit appears on products, stock, purchases and sales.
+    </small>
 </div>

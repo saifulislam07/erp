@@ -17,9 +17,9 @@
     <h3>Breakdown by Head</h3>
     <table>
         @foreach ($byHead as $headName => $total)
-            <tr><th>{{ $headName }}</th><td>{{ number_format($total, 2) }}</td></tr>
+            <tr><th>{{ $headName }}</th><td>{{ money($total, false) }}</td></tr>
         @endforeach
-        <tr><th>Grand Total</th><td>{{ number_format($grandTotal, 2) }}</td></tr>
+        <tr><th>Grand Total</th><td>{{ money($grandTotal, false) }}</td></tr>
     </table>
 
     <h3>Details</h3>
