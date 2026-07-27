@@ -22,7 +22,13 @@ class OrderStatusChangedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        $channels = ['database'];
+
+        if (config('erp.notifications.order_status_change', true)) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     /**
@@ -39,5 +45,19 @@ class OrderStatusChangedNotification extends Notification
         }
 
         return $mail->action('View Order', route('client.orders.show', $this->order));
+    }
+
+    /**
+     * Get the array representation of the notification.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'title' => "Order {$this->order->order_id} Update",
+            'message' => 'Status changed to: '.ucfirst(str_replace('_', ' ', $this->order->status)),
+            'url' => route('client.orders.show', $this->order),
+        ];
     }
 }

@@ -21,7 +21,7 @@ class ClientPasswordResetNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return config('erp.notifications.password_reset', true) ? ['mail'] : [];
     }
 
     /**

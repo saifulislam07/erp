@@ -3,6 +3,7 @@
 use App\Http\Controllers\Client\AuthenticatedSessionController;
 use App\Http\Controllers\Client\DashboardController;
 use App\Http\Controllers\Client\MessageController;
+use App\Http\Controllers\Client\NotificationController;
 use App\Http\Controllers\Client\OrderController;
 use App\Http\Controllers\Client\PasswordController;
 use App\Http\Controllers\Client\ReturnController;
@@ -24,6 +25,9 @@ Route::prefix('client')->name('client.')->group(function () {
 
         Route::get('messages', [MessageController::class, 'index'])->name('messages.index');
         Route::post('messages', [MessageController::class, 'store'])->name('messages.store');
+
+        Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::get('notifications/poll', [NotificationController::class, 'poll'])->name('notifications.poll');
 
         Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
         Route::get('orders/create', [OrderController::class, 'create'])->name('orders.create');

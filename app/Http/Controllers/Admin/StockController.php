@@ -107,6 +107,8 @@ class StockController extends Controller
             createdBy: $request->user()->id,
         );
 
+        $this->stockService->checkLowStock($stock->product_id);
+
         return redirect()->route('admin.stocks.index')->with('success', 'Stock adjusted successfully.');
     }
 

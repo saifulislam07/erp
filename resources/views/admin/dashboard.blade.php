@@ -105,6 +105,82 @@
     </div>
 
     <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <a href="{{ route('admin.sales.create') }}" class="btn btn-primary mr-2"><i class="fas fa-cash-register mr-1"></i> New Sale</a>
+                    <a href="{{ route('admin.purchases.create') }}" class="btn btn-success mr-2"><i class="fas fa-truck-loading mr-1"></i> New Purchase</a>
+                    <a href="{{ route('admin.orders.index') }}" class="btn btn-warning mr-2"><i class="fas fa-shopping-cart mr-1"></i> View Orders</a>
+                    <a href="{{ route('admin.reports.index') }}" class="btn btn-info"><i class="fas fa-chart-bar mr-1"></i> View Reports</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Sales - Last 30 Days</h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="salesChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Order Status Distribution</h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="orderStatusChart" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Top 5 Selling Products</h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="topProductsChart" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Recent Activities</h3>
+                </div>
+                <div class="card-body p-0" style="max-height: 320px; overflow-y: auto;">
+                    @if (empty($recentActivities))
+                        <p class="p-3 text-muted mb-0">No recent activity.</p>
+                    @else
+                        <table class="table table-sm mb-0">
+                            <tbody>
+                                @foreach ($recentActivities as $activity)
+                                    <tr>
+                                        <td><span class="badge badge-secondary">{{ $activity['type'] }}</span></td>
+                                        <td>{{ $activity['description'] }}</td>
+                                        <td class="text-right">{{ number_format($activity['amount'], 2) }}</td>
+                                        <td class="text-muted text-sm">{{ \Illuminate\Support\Carbon::parse($activity['date'])->diffForHumans() }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
@@ -130,3 +206,50 @@
         </div>
     </div>
 @endsection
+
+@push('js')
+    <script>
+        $(function () {
+            new Chart(document.getElementById('salesChart'), {
+                type: 'line',
+                data: {
+                    labels: @json($salesChart['labels']),
+                    datasets: [{
+                        label: 'Sales',
+                        data: @json($salesChart['totals']),
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0,123,255,0.1)',
+                        fill: true,
+                        tension: 0.3,
+                    }],
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } },
+            });
+
+            new Chart(document.getElementById('orderStatusChart'), {
+                type: 'pie',
+                data: {
+                    labels: @json($orderStatusDistribution['labels']),
+                    datasets: [{
+                        data: @json($orderStatusDistribution['counts']),
+                        backgroundColor: ['#17a2b8', '#ffc107', '#28a745', '#dc3545', '#6c757d', '#007bff', '#fd7e14'],
+                    }],
+                },
+                options: { responsive: true },
+            });
+
+            new Chart(document.getElementById('topProductsChart'), {
+                type: 'bar',
+                data: {
+                    labels: @json(array_column($topProducts, 'name')),
+                    datasets: [{
+                        label: 'Quantity Sold',
+                        data: @json(array_column($topProducts, 'qty')),
+                        backgroundColor: '#28a745',
+                    }],
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } },
+            });
+        });
+    </script>
+@endpush

@@ -40,6 +40,15 @@
                     </ul>
 
                     <ul class="navbar-nav ml-auto">
+                        <x-adminlte-navbar-notification
+                            id="client-notification-bell"
+                            icon="far fa-bell"
+                            badge-color="danger"
+                            enable-dropdown-mode="true"
+                            dropdown-footer-label="See All Notifications"
+                            href="{{ route('client.notifications.index') }}"
+                            :update-cfg="['route' => 'client.notifications.poll', 'period' => 30]"
+                        />
                         <li class="nav-item">
                             <span class="nav-link">{{ auth('client')->user()->name }}</span>
                         </li>

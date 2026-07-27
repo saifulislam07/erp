@@ -23,6 +23,7 @@ class Client extends Authenticatable
         'password',
         'status',
         'profile_photo',
+        'conversation_resolved',
     ];
 
     protected $hidden = [
@@ -35,6 +36,7 @@ class Client extends Authenticatable
         return [
             'password' => 'hashed',
             'status' => 'boolean',
+            'conversation_resolved' => 'boolean',
         ];
     }
 

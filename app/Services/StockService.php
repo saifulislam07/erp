@@ -2,9 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\Product;
 use App\Models\Stock;
 use App\Models\StockMovement;
+use App\Models\User;
+use App\Notifications\LowStockNotification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use RuntimeException;
 
 class StockService
@@ -103,6 +107,29 @@ class StockService
                 createdBy: $createdBy,
             );
         });
+
+        $this->checkLowStock($productId);
+    }
+
+    public function checkLowStock(int $productId): void
+    {
+        $product = Product::find($productId);
+
+        if (! $product || (float) $product->min_stock_threshold <= 0) {
+            return;
+        }
+
+        $available = $this->getAvailableStock($productId);
+
+        if ($available >= (float) $product->min_stock_threshold) {
+            return;
+        }
+
+        $recipients = User::where('is_admin', true)
+            ->orWhereHas('roles', fn ($q) => $q->where('name', 'Store Manager'))
+            ->get();
+
+        Notification::send($recipients, new LowStockNotification($product, $available));
     }
 
     public function getAvailableStock(int $productId, ?int $storeId = null): float

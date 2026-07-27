@@ -22,7 +22,13 @@ class OrderSubmittedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        $channels = ['database'];
+
+        if (config('erp.notifications.order_placed', true)) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     /**
@@ -35,5 +41,19 @@ class OrderSubmittedNotification extends Notification
             ->line("A new order {$this->order->order_id} has been submitted by {$this->order->client->name}.")
             ->line("Total amount: {$this->order->total_amount}")
             ->action('Review Order', route('admin.orders.show', $this->order));
+    }
+
+    /**
+     * Get the array representation of the notification.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'title' => "New Order: {$this->order->order_id}",
+            'message' => "{$this->order->client->name} submitted a new order worth {$this->order->total_amount}.",
+            'url' => route('admin.orders.show', $this->order),
+        ];
     }
 }

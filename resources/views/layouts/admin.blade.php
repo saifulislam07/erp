@@ -9,6 +9,18 @@
     <h1>@yield('content_title', $title ?? 'Dashboard')</h1>
 @endsection
 
+@section('content_top_nav_right')
+    <x-adminlte-navbar-notification
+        id="admin-notification-bell"
+        icon="far fa-bell"
+        badge-color="danger"
+        enable-dropdown-mode="true"
+        dropdown-footer-label="See All Notifications"
+        href="{{ route('admin.notifications.index') }}"
+        :update-cfg="['route' => 'admin.notifications.poll', 'period' => 30]"
+    />
+@endsection
+
 @section('content')
     @if (session('success'))
         <div class="alert alert-success alert-dismissible">

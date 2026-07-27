@@ -23,9 +23,11 @@ use App\Http\Controllers\Admin\PurchaseController;
 use App\Http\Controllers\Admin\PurchaseReturnController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ReturnTypeController;
+use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SalaryController;
 use App\Http\Controllers\Admin\SaleController;
+use App\Http\Controllers\Admin\SearchController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\StoreController;
 use App\Http\Controllers\Admin\StoreDispatchController;
@@ -57,6 +59,20 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('messages', [MessageController::class, 'index'])->name('messages.index');
     Route::get('messages/{client}', [MessageController::class, 'show'])->name('messages.show');
     Route::post('messages/{client}', [MessageController::class, 'store'])->name('messages.store');
+    Route::post('messages/{client}/resolve', [MessageController::class, 'resolve'])->name('messages.resolve');
+
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('notifications/poll', [NotificationController::class, 'poll'])->name('notifications.poll');
+    Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+
+    Route::prefix('search')->name('search.')->group(function () {
+        Route::get('global', [SearchController::class, 'global'])->name('global');
+        Route::get('suppliers', [SearchController::class, 'suppliers'])->name('suppliers');
+        Route::get('orders', [SearchController::class, 'orders'])->name('orders');
+        Route::get('sales', [SearchController::class, 'sales'])->name('sales');
+        Route::get('returns', [SearchController::class, 'returns'])->name('returns');
+        Route::get('stocks', [SearchController::class, 'stocks'])->name('stocks');
+    });
 
     Route::resource('categories', CategoryController::class)->except(['show']);
     Route::get('categories/{category}/subcategories', [CategoryController::class, 'subcategories'])
