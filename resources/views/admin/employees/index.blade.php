@@ -43,6 +43,9 @@
                                 </form>
                             </td>
                             <td>
+                                <a href="{{ route('admin.employees.show', $employee) }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
                                 <a href="{{ route('admin.employees.edit', $employee) }}" class="btn btn-sm btn-warning">
                                     <i class="fas fa-edit"></i>
                                 </a>

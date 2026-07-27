@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ClientRequest;
 use App\Models\Client;
+use App\Models\OrderReturn;
+use App\Models\Sale;
 use App\Notifications\ClientPasswordResetNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -54,6 +56,49 @@ class ClientController extends Controller
         ]);
 
         return redirect()->route('admin.clients.index')->with('success', 'Client created successfully.');
+    }
+
+    public function show(Client $client): View
+    {
+        $user = auth()->user();
+
+        // Each panel is scoped to the permission guarding the module it draws
+        // from, so a client-only role never sees order/sale/return records.
+        $orderStats = ['total' => 0, 'pending' => 0, 'delivered' => 0, 'cancelled' => 0, 'value' => 0.0];
+        $recentOrders = collect();
+        $recentSales = collect();
+        $returns = collect();
+
+        if ($user->can('order.view')) {
+            $orderStats = [
+                'total' => $client->orders()->count(),
+                'pending' => $client->orders()->whereIn('status', ['pending', 'processing', 'confirmed'])->count(),
+                'delivered' => $client->orders()->where('status', 'delivered')->count(),
+                'cancelled' => $client->orders()->whereIn('status', ['cancelled', 'rejected'])->count(),
+                // Cancelled/rejected orders never earn revenue, so keep them out of the total.
+                'value' => (float) $client->orders()->whereNotIn('status', ['cancelled', 'rejected'])->sum('total_amount'),
+            ];
+
+            $recentOrders = $client->orders()->latest()->take(10)->get();
+        }
+
+        if ($user->can('sale.view')) {
+            $recentSales = Sale::where('customer_type', 'client_agent')
+                ->where('customer_id', $client->id)
+                ->latest()
+                ->take(10)
+                ->get();
+        }
+
+        if ($user->can('return.view')) {
+            $returns = OrderReturn::with('returnType')
+                ->where('client_id', $client->id)
+                ->latest()
+                ->take(10)
+                ->get();
+        }
+
+        return view('admin.clients.show', compact('client', 'orderStats', 'recentOrders', 'recentSales', 'returns'));
     }
 
     public function edit(Client $client): View

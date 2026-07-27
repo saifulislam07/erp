@@ -7,6 +7,14 @@
         <div class="card-header">
             <h3 class="card-title">Sale {{ $sale->sale_id }}</h3>
             <div class="card-tools">
+                @can('invoice.view')
+                    <a href="{{ route('admin.invoices.sale', $sale) }}" class="btn btn-primary btn-sm" target="_blank">
+                        <i class="fas fa-file-invoice"></i> Invoice
+                    </a>
+                    <a href="{{ route('admin.invoices.sale', ['sale' => $sale, 'format' => 'pdf']) }}" class="btn btn-danger btn-sm">
+                        <i class="fas fa-file-pdf"></i> Download PDF
+                    </a>
+                @endcan
                 <a href="{{ route('admin.sales.index') }}" class="btn btn-secondary btn-sm">Back</a>
             </div>
         </div>

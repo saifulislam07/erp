@@ -1,8 +1,13 @@
 @extends('adminlte::page')
 
+{{--
+    adminlte::page already renders @stack('css') / @stack('js') alongside
+    @yield('css') / @yield('js'), so these sections must NOT re-emit the stacks
+    or every @push block on a page would be output twice (duplicate event
+    handlers, duplicated rows, double AJAX calls).
+--}}
 @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.11/css/dataTables.bootstrap4.min.css">
-    @stack('css')
 @endsection
 
 @section('content_header')
@@ -43,5 +48,4 @@
     <script src="https://cdn.datatables.net/1.13.11/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.11/js/dataTables.bootstrap4.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    @stack('js')
 @endsection

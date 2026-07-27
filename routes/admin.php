@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\Admin\ExpenseController;
 use App\Http\Controllers\Admin\ExpenseHeadController;
 use App\Http\Controllers\Admin\FeedbackController;
+use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\MessageController;
 use App\Http\Controllers\Admin\OrderController;
@@ -38,7 +39,13 @@ use App\Http\Controllers\Admin\UnitController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Intentionally ungated: this is the fallback landing page for users
+    // without `dashboard.view`, so it must never 403.
+    Route::get('home', [HomeController::class, 'index'])->name('home');
+
+    Route::middleware('check.permission:dashboard.view')->group(function () {
+        Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    });
 
     Route::get('password/change', [PasswordController::class, 'edit'])->name('password.edit');
     Route::put('password/change', [PasswordController::class, 'update'])->name('password.update');
@@ -51,8 +58,22 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
     });
 
+    Route::middleware('check.permission:role.create')->group(function () {
+        Route::get('roles/create', [RoleController::class, 'create'])->name('roles.create');
+        Route::post('roles', [RoleController::class, 'store'])->name('roles.store');
+    });
+
+    Route::middleware('check.permission:role.edit')->group(function () {
+        Route::get('roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
+        Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+    });
+
+    Route::middleware('check.permission:role.delete')->group(function () {
+        Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+    });
+
     Route::middleware('check.permission:user.view')->group(function () {
-        Route::resource('employees', EmployeeController::class)->except(['show']);
+        Route::resource('employees', EmployeeController::class);
         Route::post('employees/{employee}/reset-password', [EmployeeController::class, 'resetPassword'])
             ->name('employees.reset-password');
         Route::post('employees/{employee}/toggle-status', [EmployeeController::class, 'toggleStatus'])
@@ -64,15 +85,17 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('clients/search', [ClientController::class, 'search'])->name('clients.search');
 
     Route::middleware('check.permission:client.view')->group(function () {
-        Route::resource('clients', ClientController::class)->except(['show']);
+        Route::resource('clients', ClientController::class);
         Route::post('clients/{client}/reset-password', [ClientController::class, 'resetPassword'])
             ->name('clients.reset-password');
     });
 
-    Route::get('messages', [MessageController::class, 'index'])->name('messages.index');
-    Route::get('messages/{client}', [MessageController::class, 'show'])->name('messages.show');
-    Route::post('messages/{client}', [MessageController::class, 'store'])->name('messages.store');
-    Route::post('messages/{client}/resolve', [MessageController::class, 'resolve'])->name('messages.resolve');
+    Route::middleware('check.permission:message.view')->group(function () {
+        Route::get('messages', [MessageController::class, 'index'])->name('messages.index');
+        Route::get('messages/{client}', [MessageController::class, 'show'])->name('messages.show');
+        Route::post('messages/{client}', [MessageController::class, 'store'])->name('messages.store');
+        Route::post('messages/{client}/resolve', [MessageController::class, 'resolve'])->name('messages.resolve');
+    });
 
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('notifications/poll', [NotificationController::class, 'poll'])->name('notifications.poll');
@@ -87,39 +110,52 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('stocks', [SearchController::class, 'stocks'])->name('stocks');
     });
 
-    Route::resource('categories', CategoryController::class)->except(['show']);
-    Route::get('categories/{category}/subcategories', [CategoryController::class, 'subcategories'])
-        ->name('categories.subcategories');
-
-    Route::resource('units', UnitController::class)->except(['show']);
-
-    Route::get('products/report', [ProductController::class, 'report'])->name('products.report');
-    Route::get('products/report/excel', [ProductController::class, 'reportExcel'])->name('products.report.excel');
-    Route::get('products/report/pdf', [ProductController::class, 'reportPdf'])->name('products.report.pdf');
+    // Left ungated: products/search is an AJAX lookup used while building
+    // purchase and sale item rows, so it must stay reachable for those roles.
+    // Must stay above the products resource so it is not matched as products/{product}.
     Route::get('products/search', [ProductController::class, 'search'])->name('products.search');
 
-    Route::resource('products', ProductController::class);
+    Route::middleware('check.permission:product.view')->group(function () {
+        Route::resource('categories', CategoryController::class)->except(['show']);
+        Route::get('categories/{category}/subcategories', [CategoryController::class, 'subcategories'])
+            ->name('categories.subcategories');
 
-    Route::resource('products.discounts', ProductDiscountController::class)
-        ->parameters(['discounts' => 'discount'])
-        ->except(['show']);
+        Route::resource('units', UnitController::class)->except(['show']);
+
+        Route::get('products/report', [ProductController::class, 'report'])->name('products.report');
+        Route::get('products/report/excel', [ProductController::class, 'reportExcel'])->name('products.report.excel');
+        Route::get('products/report/pdf', [ProductController::class, 'reportPdf'])->name('products.report.pdf');
+
+        Route::resource('products', ProductController::class);
+
+        Route::resource('products.discounts', ProductDiscountController::class)
+            ->parameters(['discounts' => 'discount'])
+            ->except(['show']);
+    });
 
     Route::middleware('admin.only')->group(function () {
         Route::resource('stores', StoreController::class)->except(['show']);
     });
 
-    Route::get('stocks/low-quantity', [StockController::class, 'lowQuantity'])->name('stocks.low-quantity');
-    Route::get('stocks/expiry/one-month', [StockController::class, 'expiryOneMonth'])->name('stocks.expiry.one-month');
-    Route::get('stocks/expiry/three-month', [StockController::class, 'expiryThreeMonth'])->name('stocks.expiry.three-month');
-    Route::resource('stocks', StockController::class)->except(['show']);
+    Route::middleware('check.permission:stock.view')->group(function () {
+        Route::get('stocks/low-quantity', [StockController::class, 'lowQuantity'])->name('stocks.low-quantity');
+        Route::get('stocks/expiry/one-month', [StockController::class, 'expiryOneMonth'])->name('stocks.expiry.one-month');
+        Route::get('stocks/expiry/three-month', [StockController::class, 'expiryThreeMonth'])->name('stocks.expiry.three-month');
+        Route::resource('stocks', StockController::class)->except(['show']);
+    });
 
-    Route::resource('suppliers', SupplierController::class)->except(['show']);
+    Route::middleware('check.permission:purchase.view')->group(function () {
+        Route::resource('suppliers', SupplierController::class)->except(['show']);
+    });
 
-    Route::get('purchases/report', [PurchaseController::class, 'report'])->name('purchases.report');
-    Route::get('purchases/report/excel', [PurchaseController::class, 'reportExcel'])->name('purchases.report.excel');
-    Route::get('purchases/report/pdf', [PurchaseController::class, 'reportPdf'])->name('purchases.report.pdf');
+    Route::middleware('check.permission:purchase.view')->group(function () {
+        // Must stay above the purchases resource so they are not matched as purchases/{purchase}.
+        Route::get('purchases/report', [PurchaseController::class, 'report'])->name('purchases.report');
+        Route::get('purchases/report/excel', [PurchaseController::class, 'reportExcel'])->name('purchases.report.excel');
+        Route::get('purchases/report/pdf', [PurchaseController::class, 'reportPdf'])->name('purchases.report.pdf');
 
-    Route::resource('purchases', PurchaseController::class);
+        Route::resource('purchases', PurchaseController::class);
+    });
 
     Route::get('purchases/{purchase}/returns', [PurchaseReturnController::class, 'index'])->name('purchases.returns.index');
     Route::get('purchases/{purchase}/returns/create', [PurchaseReturnController::class, 'create'])->name('purchases.returns.create');
@@ -142,11 +178,13 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('orders/{order}/update-status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
     Route::post('orders/{order}/pack', [OrderController::class, 'pack'])->name('orders.pack');
 
-    Route::get('cash-bank', [CashBankController::class, 'index'])->name('cash-bank.index');
-    Route::get('cash-bank/transactions', [CashBankController::class, 'transactions'])->name('cash-bank.transactions');
-    Route::get('cash-bank/transfer', [CashBankController::class, 'transferForm'])->name('cash-bank.transfer.form');
-    Route::post('cash-bank/transfer', [CashBankController::class, 'transfer'])->name('cash-bank.transfer');
-    Route::get('cash-bank/transfer-history', [CashBankController::class, 'transferHistory'])->name('cash-bank.transfer-history');
+    Route::middleware('check.permission:cash.view')->group(function () {
+        Route::get('cash-bank', [CashBankController::class, 'index'])->name('cash-bank.index');
+        Route::get('cash-bank/transactions', [CashBankController::class, 'transactions'])->name('cash-bank.transactions');
+        Route::get('cash-bank/transfer', [CashBankController::class, 'transferForm'])->name('cash-bank.transfer.form');
+        Route::post('cash-bank/transfer', [CashBankController::class, 'transfer'])->name('cash-bank.transfer');
+        Route::get('cash-bank/transfer-history', [CashBankController::class, 'transferHistory'])->name('cash-bank.transfer-history');
+    });
 
     Route::get('accounts/payable', [AccountController::class, 'payable'])->name('accounts.payable');
     Route::get('accounts/receivable', [AccountController::class, 'receivable'])->name('accounts.receivable');
@@ -157,26 +195,32 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::delete('accounts/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
     Route::post('accounts/{account}/settle', [AccountController::class, 'settle'])->name('accounts.settle');
 
-    Route::resource('salaries', SalaryController::class)->only(['index', 'create', 'store', 'show']);
+    Route::middleware('check.permission:cash.view')->group(function () {
+        Route::resource('salaries', SalaryController::class)->only(['index', 'create', 'store', 'show']);
+    });
 
-    Route::get('store/dispatch-queue', [StoreDispatchController::class, 'dispatchQueue'])->name('store.dispatch-queue');
-    Route::post('store/dispatch/{order}', [StoreDispatchController::class, 'dispatch'])->name('store.dispatch');
+    Route::middleware('check.permission:delivery.view')->group(function () {
+        Route::get('store/dispatch-queue', [StoreDispatchController::class, 'dispatchQueue'])->name('store.dispatch-queue');
+        Route::post('store/dispatch/{order}', [StoreDispatchController::class, 'dispatch'])->name('store.dispatch');
 
-    Route::get('delivery', [DeliveryController::class, 'index'])->name('deliveries.index');
-    Route::post('delivery/{delivery}/out', [DeliveryController::class, 'out'])->name('deliveries.out');
-    Route::post('delivery/{delivery}/delivered', [DeliveryController::class, 'delivered'])->name('deliveries.delivered');
-    Route::post('delivery/{delivery}/failed', [DeliveryController::class, 'failed'])->name('deliveries.failed');
+        Route::get('delivery', [DeliveryController::class, 'index'])->name('deliveries.index');
+        Route::post('delivery/{delivery}/out', [DeliveryController::class, 'out'])->name('deliveries.out');
+        Route::post('delivery/{delivery}/delivered', [DeliveryController::class, 'delivered'])->name('deliveries.delivered');
+        Route::post('delivery/{delivery}/failed', [DeliveryController::class, 'failed'])->name('deliveries.failed');
+    });
 
-    Route::resource('return-types', ReturnTypeController::class)->except(['show']);
+    Route::middleware('check.permission:return.view')->group(function () {
+        Route::resource('return-types', ReturnTypeController::class)->except(['show']);
 
-    Route::get('returns', [OrderReturnController::class, 'index'])->name('returns.index');
-    Route::get('returns/{return}', [OrderReturnController::class, 'show'])->name('returns.show');
-    Route::post('returns/{return}/approve', [OrderReturnController::class, 'approve'])->name('returns.approve');
-    Route::post('returns/{return}/reject', [OrderReturnController::class, 'reject'])->name('returns.reject');
+        Route::get('returns', [OrderReturnController::class, 'index'])->name('returns.index');
+        Route::get('returns/{return}', [OrderReturnController::class, 'show'])->name('returns.show');
+        Route::post('returns/{return}/approve', [OrderReturnController::class, 'approve'])->name('returns.approve');
+        Route::post('returns/{return}/reject', [OrderReturnController::class, 'reject'])->name('returns.reject');
 
-    Route::get('feedbacks', [FeedbackController::class, 'index'])->name('feedbacks.index');
+        Route::get('feedbacks', [FeedbackController::class, 'index'])->name('feedbacks.index');
+    });
 
-    Route::middleware('admin_or_accountant')->group(function () {
+    Route::middleware('check.permission:expense.view')->group(function () {
         Route::resource('expense-heads', ExpenseHeadController::class)->except(['show']);
 
         Route::get('expenses/report', [ExpenseController::class, 'report'])->name('expenses.report');
@@ -194,7 +238,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::resource('assets', AssetController::class);
     });
 
-    Route::middleware('admin_or_accountant')->group(function () {
+    Route::middleware('check.permission:report.view')->group(function () {
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
 
         Route::get('reports/profit', [ReportController::class, 'profit'])->name('reports.profit');
@@ -209,6 +253,9 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('reports/orders/excel', [ReportController::class, 'ordersExcel'])->name('reports.orders.excel');
         Route::get('reports/orders/pdf', [ReportController::class, 'ordersPdf'])->name('reports.orders.pdf');
 
+    });
+
+    Route::middleware('check.permission:invoice.view')->group(function () {
         Route::get('invoices/sale/{sale}', [InvoiceController::class, 'sale'])->name('invoices.sale');
         Route::get('invoices/purchase/{purchase}', [InvoiceController::class, 'purchase'])->name('invoices.purchase');
         Route::get('invoices/expense/{expense}', [InvoiceController::class, 'expense'])->name('invoices.expense');

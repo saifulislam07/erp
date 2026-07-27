@@ -84,7 +84,7 @@
                     <tbody></tbody>
                 </table>
 
-                <button type="button" class="btn btn-secondary btn-sm" id="add-row">
+                <button type="button" class="btn btn-secondary btn-sm mt-2 mb-3" id="add-row">
                     <i class="fas fa-plus"></i> Add Product
                 </button>
 

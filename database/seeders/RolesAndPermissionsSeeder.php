@@ -14,8 +14,10 @@ class RolesAndPermissionsSeeder extends Seeder
     public function run(): void
     {
         $permissions = [
+            'dashboard.view',
             'department.view', 'department.create', 'department.edit', 'department.delete',
-            'role.view', 'user.view', 'user.create', 'user.edit', 'user.delete',
+            'role.view', 'role.create', 'role.edit', 'role.delete',
+            'user.view', 'user.create', 'user.edit', 'user.delete',
             'client.view', 'client.create', 'client.edit', 'client.delete',
             'product.view', 'product.create', 'product.edit', 'product.delete',
             'stock.view', 'stock.create', 'stock.edit', 'stock.delete',
@@ -26,6 +28,9 @@ class RolesAndPermissionsSeeder extends Seeder
             'cash.view', 'cash.create', 'cash.edit', 'cash.delete',
             'asset.view', 'asset.create', 'asset.edit', 'asset.delete',
             'report.view', 'invoice.view',
+            'message.view',
+            'delivery.view', 'delivery.manage',
+            'return.view', 'return.manage',
         ];
 
         foreach ($permissions as $permission) {
@@ -40,18 +45,21 @@ class RolesAndPermissionsSeeder extends Seeder
 
         Role::findByName('Admin')->syncPermissions($permissions);
 
-        Role::findByName('Employee')->syncPermissions(['sale.view', 'sale.create']);
-        Role::findByName('Local Seller')->syncPermissions(['sale.view', 'sale.create']);
+        Role::findByName('Employee')->syncPermissions(['dashboard.view', 'sale.view', 'sale.create']);
+        Role::findByName('Local Seller')->syncPermissions(['dashboard.view', 'sale.view', 'sale.create']);
 
         Role::findByName('Accountant')->syncPermissions([
+            'dashboard.view',
             'cash.view', 'cash.create', 'cash.edit',
             'expense.view', 'expense.create', 'expense.edit', 'expense.delete',
             'report.view', 'invoice.view',
         ]);
 
         Role::findByName('Store Manager')->syncPermissions([
+            'dashboard.view',
             'stock.view', 'stock.create', 'stock.edit',
             'order.view', 'order.edit',
+            'delivery.view', 'delivery.manage',
         ]);
     }
 }

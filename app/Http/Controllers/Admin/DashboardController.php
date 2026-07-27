@@ -19,7 +19,26 @@ class DashboardController extends Controller
 
     public function index(): View
     {
-        $lowStockAlerts = Schema::hasTable('products') && Schema::hasTable('stocks')
+        $user = auth()->user();
+
+        // Every widget is scoped to the permission that guards the module it
+        // summarises, so the dashboard never reveals figures (cash balances,
+        // client counts, ...) from a module the user cannot otherwise open.
+        $can = [
+            'client' => $user->can('client.view'),
+            'product' => $user->can('product.view'),
+            'stock' => $user->can('stock.view'),
+            'sale' => $user->can('sale.view'),
+            'purchase' => $user->can('purchase.view'),
+            'order' => $user->can('order.view'),
+            'cash' => $user->can('cash.view'),
+            'expense' => $user->can('expense.view'),
+            'report' => $user->can('report.view'),
+            'user' => $user->can('user.view'),
+            'department' => $user->can('department.view'),
+        ];
+
+        $lowStockAlerts = $can['stock'] && Schema::hasTable('products') && Schema::hasTable('stocks')
             ? Product::where('min_stock_threshold', '>', 0)->get()->filter(function (Product $product) {
                 $available = DB::table('stocks')->where('product_id', $product->id)->sum('quantity');
 
@@ -28,29 +47,30 @@ class DashboardController extends Controller
             : 0;
 
         $cards = [
-            'total_clients' => Schema::hasTable('clients') ? DB::table('clients')->count() : 0,
-            'total_products' => Schema::hasTable('products') ? DB::table('products')->count() : 0,
-            'total_stock_value' => Schema::hasTable('stocks') ? DB::table('stocks')->sum('quantity') : 0,
-            'todays_sales' => Schema::hasTable('sales') ? DB::table('sales')->whereDate('sale_date', today())->sum('total_amount') : 0,
-            'pending_orders' => Schema::hasTable('orders') ? DB::table('orders')->where('status', 'pending')->count() : 0,
+            'total_clients' => $can['client'] && Schema::hasTable('clients') ? DB::table('clients')->count() : 0,
+            'total_products' => $can['product'] && Schema::hasTable('products') ? DB::table('products')->count() : 0,
+            'total_stock_value' => $can['stock'] && Schema::hasTable('stocks') ? DB::table('stocks')->sum('quantity') : 0,
+            'todays_sales' => $can['sale'] && Schema::hasTable('sales') ? DB::table('sales')->whereDate('sale_date', today())->sum('total_amount') : 0,
+            'pending_orders' => $can['order'] && Schema::hasTable('orders') ? DB::table('orders')->where('status', 'pending')->count() : 0,
             'low_stock_alerts' => $lowStockAlerts,
         ];
 
         $cashWidgets = [
-            'cash_balance' => Schema::hasTable('cash_bank_transactions') ? $this->cashBankService->getCashBalance() : 0,
-            'bank_balance' => Schema::hasTable('cash_bank_transactions') ? $this->cashBankService->getBankBalance() : 0,
-            'todays_expenses' => Schema::hasTable('expenses') ? DB::table('expenses')->whereDate('expense_date', today())->sum('amount') : 0,
+            'cash_balance' => $can['cash'] && Schema::hasTable('cash_bank_transactions') ? $this->cashBankService->getCashBalance() : 0,
+            'bank_balance' => $can['cash'] && Schema::hasTable('cash_bank_transactions') ? $this->cashBankService->getBankBalance() : 0,
+            'todays_expenses' => $can['expense'] && Schema::hasTable('expenses') ? DB::table('expenses')->whereDate('expense_date', today())->sum('amount') : 0,
         ];
 
-        $totalDepartments = Department::count();
-        $totalEmployees = User::count();
+        $totalDepartments = $can['department'] ? Department::count() : 0;
+        $totalEmployees = $can['user'] ? User::count() : 0;
 
-        $salesChart = $this->salesLast30Days();
-        $topProducts = $this->topSellingProducts();
-        $orderStatusDistribution = $this->orderStatusDistribution();
-        $recentActivities = $this->recentActivities();
+        $salesChart = $can['sale'] ? $this->salesLast30Days() : ['labels' => [], 'totals' => []];
+        $topProducts = $can['sale'] ? $this->topSellingProducts() : [];
+        $orderStatusDistribution = $can['order'] ? $this->orderStatusDistribution() : ['labels' => [], 'counts' => []];
+        $recentActivities = $this->recentActivities($can);
 
         return view('admin.dashboard', compact(
+            'can',
             'cards',
             'cashWidgets',
             'totalDepartments',
@@ -120,11 +140,14 @@ class DashboardController extends Controller
         ];
     }
 
-    private function recentActivities(): array
+    /**
+     * @param  array<string, bool>  $can
+     */
+    private function recentActivities(array $can): array
     {
         $activities = collect();
 
-        if (Schema::hasTable('orders')) {
+        if ($can['order'] && Schema::hasTable('orders')) {
             DB::table('orders')->latest('created_at')->limit(10)->get()->each(function ($order) use ($activities) {
                 $activities->push([
                     'type' => 'Order',
@@ -135,7 +158,7 @@ class DashboardController extends Controller
             });
         }
 
-        if (Schema::hasTable('sales')) {
+        if ($can['sale'] && Schema::hasTable('sales')) {
             DB::table('sales')->latest('created_at')->limit(10)->get()->each(function ($sale) use ($activities) {
                 $activities->push([
                     'type' => 'Sale',
@@ -146,7 +169,7 @@ class DashboardController extends Controller
             });
         }
 
-        if (Schema::hasTable('purchases')) {
+        if ($can['purchase'] && Schema::hasTable('purchases')) {
             DB::table('purchases')->latest('created_at')->limit(10)->get()->each(function ($purchase) use ($activities) {
                 $activities->push([
                     'type' => 'Purchase',

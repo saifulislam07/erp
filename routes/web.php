@@ -1,10 +1,11 @@
 <?php
 
+use App\Support\AdminLanding;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return auth()->check()
-        ? redirect('/admin/dashboard')
+        ? redirect(AdminLanding::urlFor(auth()->user()))
         : redirect()->route('login');
 });
 

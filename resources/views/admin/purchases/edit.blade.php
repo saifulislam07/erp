@@ -68,7 +68,7 @@
                     <tbody></tbody>
                 </table>
 
-                <button type="button" class="btn btn-secondary btn-sm" id="add-row">
+                <button type="button" class="btn btn-secondary btn-sm mt-2 mb-3" id="add-row">
                     <i class="fas fa-plus"></i> Add Product
                 </button>
 
@@ -275,7 +275,12 @@
                             row.find('.product-id').val(product.id);
                             input.val(product.name);
                             row.find('.price').val(product.purchase_price ?? 0);
+                            row.find('.vat').val(product.vat_percentage ?? 0);
                             resultsBox.hide().empty();
+                            // .val() does not fire `input`, so recalculate explicitly
+                            // or the row/footer totals would stay at 0.00.
+                            calculateRow(row);
+                            calculateTotals();
                         });
                         resultsBox.append(link);
                     });

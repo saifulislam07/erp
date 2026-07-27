@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\EmployeePasswordResetRequest;
 use App\Http\Requests\Admin\EmployeeRequest;
 use App\Models\Department;
+use App\Models\Salary;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
+use Spatie\Permission\Models\Role;
 
 class EmployeeController extends Controller
 {
@@ -25,7 +28,7 @@ class EmployeeController extends Controller
     public function create(): View
     {
         $departments = Department::orderBy('name')->get();
-        $roles = ['Accountant', 'Employee', 'Local Seller', 'Store Manager'];
+        $roles = $this->assignableRoles();
 
         return view('admin.employees.create', compact('departments', 'roles'));
     }
@@ -48,10 +51,22 @@ class EmployeeController extends Controller
         return redirect()->route('admin.employees.index')->with('success', 'Employee created successfully.');
     }
 
+    public function show(User $employee): View
+    {
+        $employee->load(['department', 'roles.permissions']);
+
+        $salaries = Salary::where('user_id', $employee->id)
+            ->latest('month')
+            ->take(12)
+            ->get();
+
+        return view('admin.employees.show', compact('employee', 'salaries'));
+    }
+
     public function edit(User $employee): View
     {
         $departments = Department::orderBy('name')->get();
-        $roles = ['Accountant', 'Employee', 'Local Seller', 'Store Manager'];
+        $roles = $this->assignableRoles();
 
         return view('admin.employees.edit', compact('employee', 'departments', 'roles'));
     }
@@ -90,5 +105,19 @@ class EmployeeController extends Controller
         $employee->update(['password' => $request->validated('new_password')]);
 
         return redirect()->route('admin.employees.index')->with('success', 'Employee password reset successfully.');
+    }
+
+    /**
+     * Role names an employee can be assigned. "Admin" is excluded because admins
+     * are not created from this UI (employees are always is_admin = false).
+     *
+     * @return Collection<int, string>
+     */
+    private function assignableRoles(): Collection
+    {
+        return Role::where('guard_name', 'web')
+            ->where('name', '!=', 'Admin')
+            ->orderBy('name')
+            ->pluck('name');
     }
 }

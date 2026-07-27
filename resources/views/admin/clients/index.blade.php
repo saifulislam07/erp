@@ -40,6 +40,9 @@
                                 </span>
                             </td>
                             <td>
+                                <a href="{{ route('admin.clients.show', $client) }}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
                                 <a href="{{ route('admin.clients.edit', $client) }}" class="btn btn-sm btn-warning">
                                     <i class="fas fa-edit"></i>
                                 </a>

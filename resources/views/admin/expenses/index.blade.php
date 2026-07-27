@@ -71,6 +71,12 @@
                             <td>{{ $expense->expense_date->format('Y-m-d') }}</td>
                             <td>{{ ucfirst($expense->payment_method) }}</td>
                             <td>
+                                @can('invoice.view')
+                                    <a href="{{ route('admin.invoices.expense', $expense) }}" class="btn btn-sm btn-secondary"
+                                        target="_blank" title="View invoice">
+                                        <i class="fas fa-file-invoice"></i>
+                                    </a>
+                                @endcan
                                 <a href="{{ route('admin.expenses.edit', $expense) }}" class="btn btn-sm btn-warning">Edit</a>
                                 <form action="{{ route('admin.expenses.destroy', $expense) }}" method="post" class="d-inline delete-form">
                                     @csrf

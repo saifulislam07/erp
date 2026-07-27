@@ -1,0 +1,15 @@
+1. 403, 401, 404, 500, 503 এইরকম পেজ গুলো ডীজাইন করতে হবে।
+2. adminlte থিম ইউজ করা হয়েছে, তবে আমি এইটা যেন কেউ না বুঝতে পারে সে জন্য
+3. ডেশবোর্ডের কার্ট গুলো আরও ছোট করে সাজাও।
+4. toster ,sweet alert - তবে কাস্টম ডিজাইন , থিমের সাথে মিল রেখে
+5. admin/units/create - Symbol দরকার নাই।
+6. active মেনু কাজ করছেনা ।
+7. admin/products/create - সাব কেটাগরি ডাবল চলে আসে।, Description - Text editor
+8. product multi image.
+9. সব ইমেজ webp  তে কনভার্ট হবে। এবং root এর public/upload - এ মডিউল অনুযায়ী সেইভা হবে।
+10. admin এ products view তে ডিস্কাউন্ট সহ সব ইনফরমেশন আসবে।
+11. purchase invoice, sale invoice
+12. purchase মডিউলের সাথে রিটার্ন লিস্ট লাগবে, same for sale
+13. কোন সাপ্লায়ার কতো পাবে, এবং তাদের পেমেন্ট সিস্টেম। সেইম কাস্টমার ।
+14. SMTP, invoice mail, password reset etc
+15. admin profile

@@ -31,7 +31,13 @@ class EmployeeRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string'],
             'department_id' => ['nullable', 'exists:departments,id'],
-            'role' => ['required', Rule::in(['Accountant', 'Employee', 'Local Seller', 'Store Manager'])],
+            // Any role except "Admin" — admins are not created from this UI.
+            'role' => [
+                'required',
+                Rule::exists('roles', 'name')->where(
+                    fn ($query) => $query->where('guard_name', 'web')->where('name', '!=', 'Admin')
+                ),
+            ],
         ];
 
         if ($this->isMethod('post')) {

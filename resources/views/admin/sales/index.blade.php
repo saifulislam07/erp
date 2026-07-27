@@ -85,6 +85,12 @@
                                 <a href="{{ route('admin.sales.show', $sale) }}" class="btn btn-sm btn-info">
                                     <i class="fas fa-eye"></i>
                                 </a>
+                                @can('invoice.view')
+                                    <a href="{{ route('admin.invoices.sale', $sale) }}" class="btn btn-sm btn-secondary"
+                                        target="_blank" title="View invoice">
+                                        <i class="fas fa-file-invoice"></i>
+                                    </a>
+                                @endcan
                                 @can('update', $sale)
                                     <a href="{{ route('admin.sales.edit', $sale) }}" class="btn btn-sm btn-warning">
                                         <i class="fas fa-edit"></i>
