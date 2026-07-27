@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ReturnApproveRequest;
+use App\Http\Requests\Admin\ReturnRejectRequest;
 use App\Models\DamageLog;
 use App\Models\OrderReturn;
 use App\Models\Store;
@@ -114,13 +115,11 @@ class OrderReturnController extends Controller
         return redirect()->route('admin.returns.show', $return)->with('success', 'Return approved successfully.');
     }
 
-    public function reject(Request $request, OrderReturn $return): RedirectResponse
+    public function reject(ReturnRejectRequest $request, OrderReturn $return): RedirectResponse
     {
         if ($return->status !== 'pending') {
             return back()->with('error', 'This return has already been processed.');
         }
-
-        $request->validate(['note' => ['required', 'string', 'max:500']]);
 
         $return->update([
             'status' => 'rejected',

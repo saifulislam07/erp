@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\MessageRequest;
 use App\Models\Client;
 use App\Models\Message;
 use App\Notifications\MessageReceivedNotification;
@@ -64,10 +65,8 @@ class MessageController extends Controller
         return redirect()->route('admin.messages.index', ['client' => $client->id]);
     }
 
-    public function store(Request $request, Client $client): RedirectResponse
+    public function store(MessageRequest $request, Client $client): RedirectResponse
     {
-        $request->validate(['message' => ['required', 'string']]);
-
         $message = Message::create([
             'sender_type' => 'admin',
             'sender_id' => $request->user()->id,

@@ -48,7 +48,7 @@ class StockController extends Controller
         }
 
         $stocks = $query->latest()->get();
-        $categories = Category::whereNull('parent_id')->orderBy('name')->get();
+        $categories = Category::topLevel();
         $stores = Store::orderBy('name')->get();
 
         return view('admin.stocks.index', compact('stocks', 'categories', 'stores'));

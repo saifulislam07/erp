@@ -13,10 +13,7 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>{{ config('app.name') }}</h1>
-        <p>Expense Invoice</p>
-    </div>
+    @include('admin.invoices.partials.header', ['invoiceTitle' => 'Expense Invoice'])
 
     <table class="details">
         <tr><th>Invoice #</th><td>{{ $invoice->invoice_number }}</td></tr>

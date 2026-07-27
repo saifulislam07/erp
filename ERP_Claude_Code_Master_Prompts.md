@@ -942,9 +942,6 @@ You are a senior Laravel developer. Phases 1-9 are complete. Now build Expense a
 
 ```
 
-change the login page desing
-admin panel colorful left menu icons, white text
-
 You are a senior Laravel developer. Phases 1-10 are complete. Now build Reports and Invoice Generation.
 
 ### REPORT TYPES

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AccountController;
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\AssetController;
 use App\Http\Controllers\Admin\CashBankController;
 use App\Http\Controllers\Admin\CategoryController;
@@ -28,6 +29,7 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SalaryController;
 use App\Http\Controllers\Admin\SaleController;
 use App\Http\Controllers\Admin\SearchController;
+use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\StoreController;
 use App\Http\Controllers\Admin\StoreDispatchController;
@@ -41,20 +43,31 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('password/change', [PasswordController::class, 'edit'])->name('password.edit');
     Route::put('password/change', [PasswordController::class, 'update'])->name('password.update');
 
-    Route::resource('departments', DepartmentController::class)->except(['show']);
+    Route::middleware('check.permission:department.view')->group(function () {
+        Route::resource('departments', DepartmentController::class)->except(['show']);
+    });
 
-    Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
+    Route::middleware('check.permission:role.view')->group(function () {
+        Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
+    });
 
-    Route::resource('employees', EmployeeController::class)->except(['show']);
-    Route::post('employees/{employee}/reset-password', [EmployeeController::class, 'resetPassword'])
-        ->name('employees.reset-password');
-    Route::post('employees/{employee}/toggle-status', [EmployeeController::class, 'toggleStatus'])
-        ->name('employees.toggle-status');
+    Route::middleware('check.permission:user.view')->group(function () {
+        Route::resource('employees', EmployeeController::class)->except(['show']);
+        Route::post('employees/{employee}/reset-password', [EmployeeController::class, 'resetPassword'])
+            ->name('employees.reset-password');
+        Route::post('employees/{employee}/toggle-status', [EmployeeController::class, 'toggleStatus'])
+            ->name('employees.toggle-status');
+    });
 
-    Route::resource('clients', ClientController::class)->except(['show']);
-    Route::post('clients/{client}/reset-password', [ClientController::class, 'resetPassword'])
-        ->name('clients.reset-password');
+    // Left ungated: clients/search is used by Employee/Local Seller roles when
+    // picking a client/agent while creating a sale.
     Route::get('clients/search', [ClientController::class, 'search'])->name('clients.search');
+
+    Route::middleware('check.permission:client.view')->group(function () {
+        Route::resource('clients', ClientController::class)->except(['show']);
+        Route::post('clients/{client}/reset-password', [ClientController::class, 'resetPassword'])
+            ->name('clients.reset-password');
+    });
 
     Route::get('messages', [MessageController::class, 'index'])->name('messages.index');
     Route::get('messages/{client}', [MessageController::class, 'show'])->name('messages.show');
@@ -200,5 +213,12 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('invoices/purchase/{purchase}', [InvoiceController::class, 'purchase'])->name('invoices.purchase');
         Route::get('invoices/expense/{expense}', [InvoiceController::class, 'expense'])->name('invoices.expense');
         Route::get('invoices/order/{order}', [InvoiceController::class, 'order'])->name('invoices.order');
+    });
+
+    Route::middleware('admin.only')->group(function () {
+        Route::get('activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
+
+        Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::post('settings', [SettingsController::class, 'update'])->name('settings.update');
     });
 });

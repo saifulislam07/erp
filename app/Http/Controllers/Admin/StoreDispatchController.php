@@ -3,19 +3,21 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreDispatchRequest;
 use App\Models\Delivery;
 use App\Models\Order;
 use App\Models\Store;
 use App\Models\StoreDispatchLog;
 use App\Notifications\OrderStatusChangedNotification;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class StoreDispatchController extends Controller
 {
     public function dispatchQueue(): View
     {
+        $this->authorize('viewAny', Order::class);
+
         $orders = Order::with('client')
             ->where('status', 'confirmed')
             ->whereDoesntHave('dispatchLog')
@@ -27,16 +29,13 @@ class StoreDispatchController extends Controller
         return view('admin.store.dispatch-queue', compact('orders', 'stores'));
     }
 
-    public function dispatch(Request $request, Order $order): RedirectResponse
+    public function dispatch(StoreDispatchRequest $request, Order $order): RedirectResponse
     {
+        $this->authorize('dispatch', $order);
+
         if ($order->status !== 'confirmed' || $order->dispatchLog()->exists()) {
             return back()->with('error', 'This order cannot be dispatched.');
         }
-
-        $request->validate([
-            'store_id' => ['required', 'exists:stores,id'],
-            'delivery_note' => ['nullable', 'string'],
-        ]);
 
         $dispatchLog = StoreDispatchLog::create([
             'order_id' => $order->id,

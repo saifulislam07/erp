@@ -15,7 +15,7 @@ Route::prefix('client')->name('client.')->group(function () {
         Route::post('login', [AuthenticatedSessionController::class, 'store']);
     });
 
-    Route::middleware('auth:client')->group(function () {
+    Route::middleware('client.auth')->group(function () {
         Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');

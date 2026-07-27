@@ -28,6 +28,8 @@ class PurchaseController extends Controller
 
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Purchase::class);
+
         $query = Purchase::with('supplier');
 
         if ($search = $request->get('purchase_id')) {
@@ -61,6 +63,8 @@ class PurchaseController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', Purchase::class);
+
         $suppliers = Supplier::where('status', true)->orderBy('name')->get();
         $stores = Store::where('status', true)->orderBy('name')->get();
 
@@ -69,6 +73,8 @@ class PurchaseController extends Controller
 
     public function store(PurchaseRequest $request): RedirectResponse
     {
+        $this->authorize('create', Purchase::class);
+
         DB::transaction(function () use ($request) {
             [$subtotal, $vatAmount, $total] = $this->calculateTotals($request->items);
 
@@ -106,6 +112,8 @@ class PurchaseController extends Controller
 
     public function show(Purchase $purchase): View
     {
+        $this->authorize('view', $purchase);
+
         $purchase->load(['supplier', 'items.product', 'items.store', 'returns.items']);
 
         return view('admin.purchases.show', compact('purchase'));
@@ -113,6 +121,8 @@ class PurchaseController extends Controller
 
     public function edit(Purchase $purchase): View|RedirectResponse
     {
+        $this->authorize('update', $purchase);
+
         if ($purchase->returns()->exists()) {
             return redirect()->route('admin.purchases.index')->with('error', 'Cannot edit a purchase that has returns.');
         }
@@ -126,6 +136,8 @@ class PurchaseController extends Controller
 
     public function update(PurchaseRequest $request, Purchase $purchase): RedirectResponse
     {
+        $this->authorize('update', $purchase);
+
         if ($purchase->returns()->exists()) {
             return redirect()->route('admin.purchases.index')->with('error', 'Cannot edit a purchase that has returns.');
         }
@@ -191,6 +203,8 @@ class PurchaseController extends Controller
 
     public function destroy(Request $request, Purchase $purchase): RedirectResponse
     {
+        $this->authorize('delete', $purchase);
+
         if ($purchase->returns()->exists()) {
             return redirect()->route('admin.purchases.index')->with('error', 'Cannot delete a purchase that has returns.');
         }

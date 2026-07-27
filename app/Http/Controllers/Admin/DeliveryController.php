@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\DeliveryFailedRequest;
+use App\Http\Requests\Admin\DeliveryOutRequest;
 use App\Models\Delivery;
+use App\Models\Order;
 use App\Notifications\OrderStatusChangedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,6 +16,8 @@ class DeliveryController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Order::class);
+
         $query = Delivery::with(['order.client']);
 
         if ($status = $request->get('status')) {
@@ -24,15 +29,13 @@ class DeliveryController extends Controller
         return view('admin.deliveries.index', compact('deliveries'));
     }
 
-    public function out(Request $request, Delivery $delivery): RedirectResponse
+    public function out(DeliveryOutRequest $request, Delivery $delivery): RedirectResponse
     {
+        $this->authorize('dispatch', $delivery->order);
+
         if ($delivery->status !== 'pending') {
             return back()->with('error', 'Only pending deliveries can be marked out for delivery.');
         }
-
-        $request->validate([
-            'delivery_person_name' => ['nullable', 'string', 'max:255'],
-        ]);
 
         $delivery->update([
             'status' => 'out_for_delivery',
@@ -51,6 +54,8 @@ class DeliveryController extends Controller
 
     public function delivered(Request $request, Delivery $delivery): RedirectResponse
     {
+        $this->authorize('dispatch', $delivery->order);
+
         if ($delivery->status !== 'out_for_delivery') {
             return back()->with('error', 'Only deliveries that are out for delivery can be marked delivered.');
         }
@@ -70,9 +75,9 @@ class DeliveryController extends Controller
         return back()->with('success', 'Delivery marked as delivered.');
     }
 
-    public function failed(Request $request, Delivery $delivery): RedirectResponse
+    public function failed(DeliveryFailedRequest $request, Delivery $delivery): RedirectResponse
     {
-        $request->validate(['delivery_note' => ['required', 'string', 'max:500']]);
+        $this->authorize('dispatch', $delivery->order);
 
         $delivery->update([
             'status' => 'failed',

@@ -42,5 +42,16 @@ class RolesAndPermissionsSeeder extends Seeder
 
         Role::findByName('Employee')->syncPermissions(['sale.view', 'sale.create']);
         Role::findByName('Local Seller')->syncPermissions(['sale.view', 'sale.create']);
+
+        Role::findByName('Accountant')->syncPermissions([
+            'cash.view', 'cash.create', 'cash.edit',
+            'expense.view', 'expense.create', 'expense.edit', 'expense.delete',
+            'report.view', 'invoice.view',
+        ]);
+
+        Role::findByName('Store Manager')->syncPermissions([
+            'stock.view', 'stock.create', 'stock.edit',
+            'order.view', 'order.edit',
+        ]);
     }
 }

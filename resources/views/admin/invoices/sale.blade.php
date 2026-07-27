@@ -18,10 +18,7 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>{{ config('app.name') }}</h1>
-        <p>Sales Invoice</p>
-    </div>
+    @include('admin.invoices.partials.header', ['invoiceTitle' => 'Sales Invoice'])
 
     <table class="meta">
         <tr>

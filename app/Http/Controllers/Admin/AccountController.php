@@ -20,7 +20,7 @@ class AccountController extends Controller
 
     public function payable(Request $request): View
     {
-        abort_unless($request->user()->is_admin || $request->user()->hasRole('Accountant'), 403);
+        $this->authorize('viewAny', Account::class);
 
         $query = Account::where('type', 'payable')->where('party_type', 'supplier');
 
@@ -34,7 +34,7 @@ class AccountController extends Controller
 
     public function receivable(Request $request): View
     {
-        abort_unless($request->user()->is_admin || $request->user()->hasRole('Accountant'), 403);
+        $this->authorize('viewAny', Account::class);
 
         $query = Account::where('type', 'receivable')->where('party_type', 'client');
 
@@ -48,7 +48,7 @@ class AccountController extends Controller
 
     public function create(Request $request): View
     {
-        abort_unless($request->user()->is_admin, 403);
+        $this->authorize('create', Account::class);
 
         $suppliers = Supplier::orderBy('name')->get();
         $clients = Client::orderBy('name')->get();
@@ -59,6 +59,8 @@ class AccountController extends Controller
 
     public function store(AccountRequest $request): RedirectResponse
     {
+        $this->authorize('create', Account::class);
+
         Account::create($request->validated() + ['created_by' => $request->user()->id]);
 
         return redirect()->route('admin.accounts.'.$request->type)->with('success', 'Account entry created successfully.');
@@ -66,7 +68,7 @@ class AccountController extends Controller
 
     public function edit(Request $request, Account $account): View
     {
-        abort_unless($request->user()->is_admin, 403);
+        $this->authorize('update', $account);
 
         $suppliers = Supplier::orderBy('name')->get();
         $clients = Client::orderBy('name')->get();
@@ -76,6 +78,8 @@ class AccountController extends Controller
 
     public function update(AccountRequest $request, Account $account): RedirectResponse
     {
+        $this->authorize('update', $account);
+
         $account->update($request->validated() + ['updated_by' => $request->user()->id]);
 
         return redirect()->route('admin.accounts.'.$account->type)->with('success', 'Account entry updated successfully.');
@@ -83,7 +87,7 @@ class AccountController extends Controller
 
     public function destroy(Request $request, Account $account): RedirectResponse
     {
-        abort_unless($request->user()->is_admin, 403);
+        $this->authorize('delete', $account);
 
         $type = $account->type;
         $account->delete();
@@ -93,7 +97,7 @@ class AccountController extends Controller
 
     public function settle(Request $request, Account $account): RedirectResponse
     {
-        abort_unless($request->user()->is_admin, 403);
+        $this->authorize('settle', $account);
 
         if ($account->is_settled) {
             return back()->with('error', 'This account entry is already settled.');

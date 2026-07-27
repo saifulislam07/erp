@@ -315,37 +315,44 @@ return [
             'text' => 'Dashboard',
             'route' => 'admin.dashboard',
             'icon' => 'fas fa-fw fa-tachometer-alt',
+            'icon_color' => 'info',
         ],
         ['header' => 'User Management'],
         [
             'text' => 'Departments',
             'route' => 'admin.departments.index',
             'icon' => 'fas fa-fw fa-building',
+            'icon_color' => 'primary',
         ],
         [
             'text' => 'Roles',
             'route' => 'admin.roles.index',
             'icon' => 'fas fa-fw fa-user-shield',
+            'icon_color' => 'purple',
         ],
         [
             'text' => 'Employees',
             'route' => 'admin.employees.index',
             'icon' => 'fas fa-fw fa-user-tie',
+            'icon_color' => 'navy',
         ],
         ['header' => 'Modules'],
         [
             'text' => 'Clients / Agents',
             'route' => 'admin.clients.index',
             'icon' => 'fas fa-fw fa-handshake',
+            'icon_color' => 'success',
         ],
         [
             'text' => 'Messages',
             'route' => 'admin.messages.index',
             'icon' => 'fas fa-fw fa-comments',
+            'icon_color' => 'warning',
         ],
         [
             'text' => 'Products',
             'icon' => 'fas fa-fw fa-box-open',
+            'icon_color' => 'orange',
             'submenu' => [
                 ['text' => 'Categories', 'route' => 'admin.categories.index'],
                 ['text' => 'Units', 'route' => 'admin.units.index'],
@@ -366,6 +373,7 @@ return [
         [
             'text' => 'Purchases',
             'icon' => 'fas fa-fw fa-truck-loading',
+            'icon_color' => 'maroon',
             'submenu' => [
                 ['text' => 'Suppliers', 'route' => 'admin.suppliers.index'],
                 ['text' => 'Purchases', 'route' => 'admin.purchases.index'],
@@ -376,6 +384,7 @@ return [
         [
             'text' => 'Sales',
             'icon' => 'fas fa-fw fa-cash-register',
+            'icon_color' => 'lime',
             'submenu' => [
                 ['text' => 'Sales', 'route' => 'admin.sales.index'],
                 ['text' => 'New Sale', 'route' => 'admin.sales.create'],
@@ -386,10 +395,12 @@ return [
             'text' => 'Orders',
             'route' => 'admin.orders.index',
             'icon' => 'fas fa-fw fa-shopping-cart',
+            'icon_color' => 'danger',
         ],
         [
             'text' => 'Store & Delivery',
             'icon' => 'fas fa-fw fa-shipping-fast',
+            'icon_color' => 'teal',
             'submenu' => [
                 ['text' => 'Dispatch Queue', 'route' => 'admin.store.dispatch-queue'],
                 ['text' => 'Deliveries', 'route' => 'admin.deliveries.index'],
@@ -398,6 +409,7 @@ return [
         [
             'text' => 'Returns',
             'icon' => 'fas fa-fw fa-undo',
+            'icon_color' => 'fuchsia',
             'submenu' => [
                 ['text' => 'All Returns', 'route' => 'admin.returns.index'],
                 ['text' => 'Return Types', 'route' => 'admin.return-types.index'],
@@ -407,6 +419,7 @@ return [
         [
             'text' => 'Expenses',
             'icon' => 'fas fa-fw fa-money-bill-wave',
+            'icon_color' => 'warning',
             'submenu' => [
                 ['text' => 'Expenses', 'route' => 'admin.expenses.index'],
                 ['text' => 'Expense Heads', 'route' => 'admin.expense-heads.index'],
@@ -416,6 +429,7 @@ return [
         [
             'text' => 'Cash & Bank',
             'icon' => 'fas fa-fw fa-university',
+            'icon_color' => 'olive',
             'submenu' => [
                 ['text' => 'Overview', 'route' => 'admin.cash-bank.index'],
                 ['text' => 'Transactions', 'route' => 'admin.cash-bank.transactions'],
@@ -429,6 +443,7 @@ return [
         [
             'text' => 'Assets',
             'icon' => 'fas fa-fw fa-boxes',
+            'icon_color' => 'indigo',
             'submenu' => [
                 ['text' => 'Assets', 'route' => 'admin.assets.index'],
                 ['text' => 'Asset Report', 'route' => 'admin.assets.report'],
@@ -437,6 +452,7 @@ return [
         [
             'text' => 'Reports & Invoices',
             'icon' => 'fas fa-fw fa-chart-bar',
+            'icon_color' => 'cyan',
             'submenu' => [
                 ['text' => 'Reports Hub', 'route' => 'admin.reports.index'],
                 ['text' => 'Sales Report', 'route' => 'admin.sales.report'],
@@ -447,11 +463,25 @@ return [
                 ['text' => 'Order Report', 'route' => 'admin.reports.orders'],
             ],
         ],
+        ['header' => 'System'],
+        [
+            'text' => 'Activity Log',
+            'route' => 'admin.activity-log.index',
+            'icon' => 'fas fa-fw fa-history',
+            'icon_color' => 'secondary',
+        ],
+        [
+            'text' => 'Settings',
+            'route' => 'admin.settings.index',
+            'icon' => 'fas fa-fw fa-cogs',
+            'icon_color' => 'gray',
+        ],
         ['header' => 'Account'],
         [
             'text' => 'Change Password',
             'route' => 'admin.password.edit',
             'icon' => 'fas fa-fw fa-lock',
+            'icon_color' => 'pink',
         ],
     ],
 

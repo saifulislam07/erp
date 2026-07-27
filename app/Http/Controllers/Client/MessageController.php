@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Client\MessageRequest;
 use App\Models\Message;
 use App\Models\User;
 use App\Notifications\MessageReceivedNotification;
@@ -32,10 +33,8 @@ class MessageController extends Controller
         return view('client.messages.index', compact('messages'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(MessageRequest $request): RedirectResponse
     {
-        $request->validate(['message' => ['required', 'string']]);
-
         $client = $request->user('client');
 
         $message = Message::create([

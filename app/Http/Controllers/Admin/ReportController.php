@@ -60,7 +60,7 @@ class ReportController extends Controller
     public function stock(Request $request): View
     {
         $stocks = $this->filteredStockQuery($request)->get();
-        $categories = Category::whereNull('parent_id')->orderBy('name')->get();
+        $categories = Category::topLevel();
         $stores = Store::orderBy('name')->get();
 
         return view('admin.reports.stock', [

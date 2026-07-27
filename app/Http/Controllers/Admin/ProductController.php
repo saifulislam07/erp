@@ -23,6 +23,8 @@ class ProductController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Product::class);
+
         $query = Product::with(['category', 'unit']);
 
         if ($search = $request->get('q')) {
@@ -44,14 +46,16 @@ class ProductController extends Controller
             return $product;
         });
 
-        $categories = Category::whereNull('parent_id')->orderBy('name')->get();
+        $categories = Category::topLevel();
 
         return view('admin.products.index', compact('products', 'categories'));
     }
 
     public function create(): View
     {
-        $categories = Category::whereNull('parent_id')->orderBy('name')->get();
+        $this->authorize('create', Product::class);
+
+        $categories = Category::topLevel();
         $units = Unit::orderBy('name')->get();
 
         return view('admin.products.create', compact('categories', 'units'));
@@ -59,6 +63,8 @@ class ProductController extends Controller
 
     public function store(ProductRequest $request): RedirectResponse
     {
+        $this->authorize('create', Product::class);
+
         $data = $request->validated();
         $data = $this->applyMrpRestriction($request, $data);
 
@@ -73,6 +79,8 @@ class ProductController extends Controller
 
     public function show(Product $product): View
     {
+        $this->authorize('view', $product);
+
         $product->load(['category', 'subCategory', 'unit', 'discounts']);
 
         $stock = Schema::hasTable('stocks')
@@ -92,7 +100,9 @@ class ProductController extends Controller
 
     public function edit(Product $product): View
     {
-        $categories = Category::whereNull('parent_id')->orderBy('name')->get();
+        $this->authorize('update', $product);
+
+        $categories = Category::topLevel();
         $subCategories = $product->category_id
             ? Category::where('parent_id', $product->category_id)->orderBy('name')->get()
             : collect();
@@ -103,6 +113,8 @@ class ProductController extends Controller
 
     public function update(ProductRequest $request, Product $product): RedirectResponse
     {
+        $this->authorize('update', $product);
+
         $data = $request->validated();
         $data = $this->applyMrpRestriction($request, $data, $product);
 
@@ -121,6 +133,8 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
+        $this->authorize('delete', $product);
+
         $hasActiveOrders = Schema::hasTable('order_items')
             && DB::table('order_items')->where('product_id', $product->id)->exists();
 
@@ -168,7 +182,7 @@ class ProductController extends Controller
     public function report(Request $request): View
     {
         $products = $this->filteredReportQuery($request)->get();
-        $categories = Category::whereNull('parent_id')->orderBy('name')->get();
+        $categories = Category::topLevel();
         $category = $request->category_id ? Category::find($request->category_id) : null;
 
         return view('admin.products.reports.index', [

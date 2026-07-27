@@ -21,7 +21,7 @@ class CategoryController extends Controller
 
     public function create(): View
     {
-        $parents = Category::whereNull('parent_id')->orderBy('name')->get();
+        $parents = Category::topLevel();
 
         return view('admin.categories.create', compact('parents'));
     }
