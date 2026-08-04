@@ -10,24 +10,53 @@ use App\Models\Product;
 use App\Models\Stock;
 use App\Models\Store;
 use App\Services\StockService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Yajra\DataTables\Facades\DataTables;
 
 class StockController extends Controller
 {
+    /** Human labels for {@see Stock::getExpiryStateAttribute()}. */
+    private const EXPIRY_LABELS = [
+        'expired' => 'Expired',
+        'one_month' => 'Expires < 1 month',
+        'three_month' => 'Expires < 3 months',
+        'ok' => 'OK',
+    ];
+
+    /** Row colouring for each expiry state. */
+    private const EXPIRY_ROW_CLASSES = [
+        'expired' => 'table-danger',
+        'one_month' => 'table-warning',
+        'three_month' => 'table-warning-soft',
+        'ok' => '',
+    ];
+
     public function __construct(private readonly StockService $stockService) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|JsonResponse
     {
-        $query = Stock::with(['product.category', 'product.unit', 'store'])
-            ->where('quantity', '>', 0);
-
-        if ($search = $request->get('q')) {
-            $query->whereHas('product', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")->orWhere('unique_id', 'like', "%{$search}%");
-            });
+        if ($request->ajax()) {
+            return $this->indexData($request);
         }
+
+        return view('admin.stocks.index', [
+            'categories' => Category::topLevel(),
+            'stores' => Store::orderBy('name')->get(),
+        ]);
+    }
+
+    /**
+     * Server-side DataTables feed for the stock listing.
+     */
+    protected function indexData(Request $request): JsonResponse
+    {
+        $query = Stock::query()
+            ->with(['product.category', 'product.unit', 'store'])
+            ->where('quantity', '>', 0)
+            ->select('stocks.*');
 
         if ($categoryId = $request->get('category_id')) {
             $query->whereHas('product', fn ($q) => $q->where('category_id', $categoryId));
@@ -45,11 +74,35 @@ class StockController extends Controller
             $query->whereDate('created_at', '<=', $toDate);
         }
 
-        $stocks = $query->latest()->get();
-        $categories = Category::topLevel();
-        $stores = Store::orderBy('name')->get();
+        return DataTables::eloquent($query)
+            ->filter(function ($query) use ($request) {
+                $search = $request->get('q') ?: $request->input('search.value');
 
-        return view('admin.stocks.index', compact('stocks', 'categories', 'stores'));
+                if (filled($search)) {
+                    $query->whereHas('product', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('unique_id', 'like', "%{$search}%");
+                    });
+                }
+            }, true)
+            ->addColumn('product_label', fn (Stock $stock) => $stock->product
+                ? e($stock->product->name).' ('.e($stock->product->unique_id).')'
+                : '—')
+            ->addColumn('category_name', fn (Stock $stock) => e($stock->product?->category?->name ?? '—'))
+            ->addColumn('store_name', fn (Stock $stock) => e($stock->store?->name ?? '—'))
+            ->editColumn('batch_number', fn (Stock $stock) => e($stock->batch_number ?: '-'))
+            ->addColumn('unit_name', fn (Stock $stock) => e($stock->product?->unit?->name ?? '—'))
+            ->addColumn('expires_on', fn (Stock $stock) => $stock->expiry_date?->format('Y-m-d') ?? '-')
+            ->addColumn('expiry_label', fn (Stock $stock) => self::EXPIRY_LABELS[$stock->expiry_state])
+            ->addColumn('actions', fn (Stock $stock) => view('admin.stocks.partials.actions', compact('stock'))->render())
+            // Colour coding travels with the row instead of the cell so the whole
+            // line reads as expired / expiring at a glance, same as before.
+            ->setRowClass(fn (Stock $stock) => self::EXPIRY_ROW_CLASSES[$stock->expiry_state])
+            ->orderColumn('store_name', 'store_id $1')
+            ->orderColumn('expires_on', 'expiry_date $1')
+            ->orderColumn('expiry_label', 'expiry_date $1')
+            ->rawColumns(['actions'])
+            ->toJson();
     }
 
     public function create(): View

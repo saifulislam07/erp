@@ -283,6 +283,110 @@
         }, 0);
     });
 
+    /* ------------------------------------------------ server-side tables */
+
+    /*
+     * Wires a table to a server-side DataTables endpoint (yajra).
+     *
+     * The listing controllers answer the very same URL as the page itself when
+     * the request is AJAX, so `url` defaults to the current location and the
+     * filter bar's inputs ride along as query parameters. Rows arrive as HTML
+     * from the server, which keeps formatting in Blade rather than duplicating
+     * it here; the delete/confirm handlers above are document-delegated, so
+     * freshly drawn rows stay wired up without re-binding anything.
+     *
+     * options:
+     *   url      — endpoint (default: current URL)
+     *   filter   — selector of the filter form whose fields feed the request
+     *   columns  — DataTables column definitions (required)
+     *   order    — initial order, e.g. [[1, 'desc']]
+     *   count    — selector of an element to receive the total row count
+     *   noun     — singular label used next to that count ("product")
+     *   empty    — message shown when the table has no rows at all
+     *   options  — extra raw DataTables options, merged last
+     */
+    ERP.serverTable = function (selector, options) {
+        options = options || {};
+
+        var $table = $(selector);
+
+        if (!$table.length) {
+            return null;
+        }
+
+        var $filter = options.filter ? $(options.filter) : $();
+
+        var config = {
+            processing: true,
+            serverSide: true,
+            searchDelay: 400,
+            deferRender: true,
+            pageLength: 25,
+            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            order: options.order || [],
+            columns: options.columns || [],
+            language: {
+                processing: '<i class="fas fa-circle-notch fa-spin"></i>',
+                emptyTable: options.empty || 'Nothing here yet.',
+                zeroRecords: 'No records match this filter.'
+            },
+            ajax: {
+                url: options.url || window.location.href,
+                data: function (params) {
+                    // The filter bar is the source of truth for the non-DataTables
+                    // criteria; serialising it here keeps one filtering path.
+                    $filter.find('input[name], select[name]').each(function () {
+                        if (this.type === 'checkbox') {
+                            params[this.name] = this.checked ? 1 : 0;
+                        } else if (this.type !== 'radio' || this.checked) {
+                            params[this.name] = $(this).val();
+                        }
+                    });
+                },
+                error: function (xhr) {
+                    if (xhr.status === 419) {
+                        ERP.toast('warning', 'Your session expired — reload the page to continue.');
+                    } else if (xhr.status !== 0) {
+                        ERP.toast('error', 'Could not load the list. Please try again.');
+                    }
+                }
+            }
+        };
+
+        var table = $table.DataTable($.extend(true, config, options.options || {}));
+
+        if ($filter.length) {
+            // Filtering now redraws the table instead of reloading the page.
+            $filter.on('submit', function (event) {
+                event.preventDefault();
+                table.ajax.reload();
+            });
+
+            $filter.on('change', 'select, input[type="date"]', function () {
+                table.ajax.reload();
+            });
+
+            $filter.on('click', '[data-table-clear]', function (event) {
+                event.preventDefault();
+                $filter.find('input[name], select[name]').val('');
+                table.ajax.reload();
+            });
+        }
+
+        if (options.count) {
+            table.on('draw.dt', function () {
+                var total = table.page.info().recordsDisplay;
+                var singular = options.noun || 'record';
+                // `nounPlural` covers the words a trailing "s" gets wrong.
+                var plural = options.nounPlural || (singular + 's');
+
+                $(options.count).text(total + ' ' + (total === 1 ? singular : plural));
+            });
+        }
+
+        return table;
+    };
+
     /*
      * Marks required inputs in their label so the form communicates what is
      * mandatory without every Blade template repeating the asterisk.

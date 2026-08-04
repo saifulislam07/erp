@@ -9,9 +9,11 @@ use App\Http\Requests\Admin\OrderUpdateStatusRequest;
 use App\Models\Order;
 use App\Models\Packaging;
 use App\Notifications\OrderStatusChangedNotification;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Yajra\DataTables\Facades\DataTables;
 
 class OrderController extends Controller
 {
@@ -21,11 +23,23 @@ class OrderController extends Controller
         'processing' => 'confirmed',
     ];
 
-    public function index(Request $request): View
+    public function index(Request $request): View|JsonResponse
     {
         $this->authorize('viewAny', Order::class);
 
-        $query = Order::with('client');
+        if ($request->ajax()) {
+            return $this->indexData($request);
+        }
+
+        return view('admin.orders.index');
+    }
+
+    /**
+     * Server-side DataTables feed for the order listing.
+     */
+    protected function indexData(Request $request): JsonResponse
+    {
+        $query = Order::query()->with('client')->select('orders.*');
 
         if ($status = $request->get('status')) {
             $query->where('status', $status);
@@ -47,9 +61,29 @@ class OrderController extends Controller
             $query->whereDate('created_at', '<=', $toDate);
         }
 
-        $orders = $query->latest()->get();
+        return DataTables::eloquent($query)
+            ->filter(function ($query) use ($request) {
+                $search = $request->input('search.value');
 
-        return view('admin.orders.index', compact('orders'));
+                if (filled($search)) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('orders.order_id', 'like', "%{$search}%")
+                            ->orWhereHas('client', fn ($c) => $c->where('name', 'like', "%{$search}%")
+                                ->orWhere('unique_id', 'like', "%{$search}%"));
+                    });
+                }
+            }, true)
+            ->addColumn('client_label', fn (Order $order) => $order->client
+                ? e($order->client->name).' ('.e($order->client->unique_id).')'
+                : '—')
+            ->addColumn('placed_on', fn (Order $order) => $order->created_at?->format('Y-m-d'))
+            ->addColumn('state', fn (Order $order) => view('admin.orders.partials.status-cell', compact('order'))->render())
+            ->addColumn('actions', fn (Order $order) => view('admin.orders.partials.actions', compact('order'))->render())
+            ->orderColumn('client_label', 'client_id $1')
+            ->orderColumn('placed_on', 'created_at $1')
+            ->orderColumn('state', 'status $1')
+            ->rawColumns(['client_label', 'state', 'actions'])
+            ->toJson();
     }
 
     public function pending(): View

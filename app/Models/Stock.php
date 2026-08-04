@@ -28,6 +28,31 @@ class Stock extends Model
         ];
     }
 
+    /**
+     * How close this batch is to expiring: `expired`, `one_month`,
+     * `three_month`, or `ok` when there is nothing to warn about. The stock
+     * listing colours its rows from this, so the thresholds live here rather
+     * than being re-derived in each view.
+     */
+    public function getExpiryStateAttribute(): string
+    {
+        if (! $this->expiry_date) {
+            return 'ok';
+        }
+
+        if ($this->expiry_date->isPast()) {
+            return 'expired';
+        }
+
+        $daysLeft = now()->startOfDay()->diffInDays($this->expiry_date, absolute: true);
+
+        return match (true) {
+            $daysLeft <= 30 => 'one_month',
+            $daysLeft <= 90 => 'three_month',
+            default => 'ok',
+        };
+    }
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);

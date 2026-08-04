@@ -3,9 +3,29 @@
 @section('content_title', 'Suppliers')
 
 @section('content_body')
+    <form method="get" class="filter-bar" id="suppliers-filter" data-no-submit-guard>
+        <div class="row align-items-end">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="q">Search</label>
+                    <input type="text" name="q" id="q" class="form-control"
+                        value="{{ request('q') }}" placeholder="Name, supplier ID, phone or company">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group page-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search mr-1"></i> Filter
+                    </button>
+                    <a href="#" class="btn btn-secondary" data-table-clear>Clear</a>
+                </div>
+            </div>
+        </div>
+    </form>
+
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">All Suppliers</h3>
+            <h3 class="card-title" id="suppliers-count">All Suppliers</h3>
             <div class="card-tools">
                 <a href="{{ route('admin.suppliers.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus"></i> Add Supplier
@@ -14,7 +34,7 @@
         </div>
 
         <div class="card-body">
-            <table id="suppliers-table" class="table table-bordered table-striped">
+            <table id="suppliers-table" class="table table-bordered table-striped" style="width: 100%">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -25,33 +45,6 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach ($suppliers as $supplier)
-                        <tr>
-                            <td>{{ $supplier->unique_id }}</td>
-                            <td>{{ $supplier->name }}</td>
-                            <td>{{ $supplier->phone }}</td>
-                            <td>{{ $supplier->company_name ?? '-' }}</td>
-                            <td>
-                                <span class="badge badge-{{ $supplier->status ? 'success' : 'danger' }}">
-                                    {{ $supplier->status ? 'Active' : 'Inactive' }}
-                                </span>
-                            </td>
-                            <td>
-                                <a href="{{ route('admin.suppliers.edit', $supplier) }}" class="btn btn-sm btn-warning">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('admin.suppliers.destroy', $supplier) }}" method="post" class="d-inline" data-confirm="Delete this supplier?" data-confirm-button="Delete">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
             </table>
         </div>
     </div>
@@ -60,8 +53,22 @@
 @push('js')
     <script>
         $(function () {
-            $('#suppliers-table').DataTable();
-
+            ERP.serverTable('#suppliers-table', {
+                url: '{{ route('admin.suppliers.index') }}',
+                filter: '#suppliers-filter',
+                count: '#suppliers-count',
+                noun: 'supplier',
+                empty: 'No suppliers yet.',
+                order: [[0, 'desc']],
+                columns: [
+                    { data: 'unique_id', name: 'unique_id' },
+                    { data: 'name', name: 'name' },
+                    { data: 'phone', name: 'phone' },
+                    { data: 'company_name', name: 'company_name' },
+                    { data: 'state', name: 'state' },
+                    { data: 'actions', name: 'actions', orderable: false, searchable: false, className: 'text-nowrap' },
+                ],
+            });
         });
     </script>
 @endpush

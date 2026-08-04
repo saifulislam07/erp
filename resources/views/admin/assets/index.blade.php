@@ -5,14 +5,15 @@
 @section('content_body')
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">All Assets</h3>
+            <h3 class="card-title" id="assets-count">All Assets</h3>
             <div class="card-tools">
                 <a href="{{ route('admin.assets.report') }}" class="btn btn-secondary btn-sm">Report</a>
                 <a href="{{ route('admin.assets.create') }}" class="btn btn-primary btn-sm">Add Asset</a>
             </div>
         </div>
         <div class="card-body">
-            <form action="{{ route('admin.assets.index') }}" method="get" class="form-inline mb-3">
+            <form action="{{ route('admin.assets.index') }}" method="get" class="form-inline mb-3"
+                  id="assets-filter" data-no-submit-guard>
                 <input type="text" name="q" class="form-control mr-2" placeholder="Search ID/name/serial..." value="{{ request('q') }}">
                 <select name="status" class="form-control mr-2">
                     <option value="">-- All Statuses --</option>
@@ -21,9 +22,10 @@
                     <option value="lost" {{ request('status') === 'lost' ? 'selected' : '' }}>Lost</option>
                 </select>
                 <button type="submit" class="btn btn-secondary">Filter</button>
+                <a href="#" class="btn btn-secondary ml-1" data-table-clear>Clear</a>
             </form>
 
-            <table id="assets-table" class="table table-bordered table-striped">
+            <table id="assets-table" class="table table-bordered table-striped" style="width: 100%">
                 <thead>
                     <tr>
                         <th>Asset ID</th>
@@ -35,31 +37,6 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach ($assets as $asset)
-                        <tr>
-                            <td>{{ $asset->asset_id }}</td>
-                            <td>{{ $asset->name }}</td>
-                            <td>{{ $asset->serial_number ?? '-' }}</td>
-                            <td>{{ $asset->category ?? '-' }}</td>
-                            <td>{{ $asset->purchase_price }}</td>
-                            <td>
-                                <span class="badge badge-{{ ['active' => 'success', 'disposed' => 'secondary', 'lost' => 'danger'][$asset->status] }}">
-                                    {{ ucfirst($asset->status) }}
-                                </span>
-                            </td>
-                            <td>
-                                <a href="{{ route('admin.assets.show', $asset) }}" class="btn btn-sm btn-info">View</a>
-                                <a href="{{ route('admin.assets.edit', $asset) }}" class="btn btn-sm btn-warning">Edit</a>
-                                <form action="{{ route('admin.assets.destroy', $asset) }}" method="post" class="d-inline" data-confirm="Delete this asset?" data-confirm-button="Delete">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
             </table>
         </div>
     </div>
@@ -68,8 +45,23 @@
 @push('js')
     <script>
         $(function () {
-            $('#assets-table').DataTable();
-
+            ERP.serverTable('#assets-table', {
+                url: '{{ route('admin.assets.index') }}',
+                filter: '#assets-filter',
+                count: '#assets-count',
+                noun: 'asset',
+                empty: 'No assets recorded yet.',
+                order: [[0, 'desc']],
+                columns: [
+                    { data: 'asset_id', name: 'asset_id' },
+                    { data: 'name', name: 'name' },
+                    { data: 'serial_number', name: 'serial_number' },
+                    { data: 'category', name: 'category' },
+                    { data: 'purchase_price', name: 'purchase_price' },
+                    { data: 'state', name: 'state' },
+                    { data: 'actions', name: 'actions', orderable: false, searchable: false, className: 'text-nowrap' },
+                ],
+            });
         });
     </script>
 @endpush

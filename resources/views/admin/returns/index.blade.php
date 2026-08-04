@@ -7,7 +7,7 @@
         <div class="card-header">
             <h3 class="card-title">Filters</h3>
         </div>
-        <form action="{{ route('admin.returns.index') }}" method="get">
+        <form action="{{ route('admin.returns.index') }}" method="get" id="returns-filter" data-no-submit-guard>
             <div class="card-body row">
                 <div class="col-md-2">
                     <label>Status</label>
@@ -36,6 +36,7 @@
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="#" class="btn btn-secondary ml-1" data-table-clear>Clear</a>
                 </div>
             </div>
         </form>
@@ -43,13 +44,13 @@
 
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">All Returns</h3>
+            <h3 class="card-title" id="returns-count">All Returns</h3>
             <div class="card-tools">
                 <a href="{{ route('admin.return-types.index') }}" class="btn btn-secondary btn-sm">Return Types</a>
             </div>
         </div>
         <div class="card-body">
-            <table id="returns-table" class="table table-bordered table-striped">
+            <table id="returns-table" class="table table-bordered table-striped" style="width: 100%">
                 <thead>
                     <tr>
                         <th>Return ID</th>
@@ -61,23 +62,6 @@
                         <th></th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach ($returns as $return)
-                        <tr>
-                            <td>{{ $return->return_id }}</td>
-                            <td>{{ $return->order->order_id }}</td>
-                            <td>{{ $return->client->name }}</td>
-                            <td>{{ $return->returnType->name }}</td>
-                            <td>
-                                <span class="badge badge-{{ ['pending' => 'warning', 'approved' => 'success', 'rejected' => 'danger'][$return->status] }}">
-                                    {{ ucfirst($return->status) }}
-                                </span>
-                            </td>
-                            <td>{{ $return->refund_amount ?? '-' }}</td>
-                            <td><a href="{{ route('admin.returns.show', $return) }}" class="btn btn-sm btn-info">View</a></td>
-                        </tr>
-                    @endforeach
-                </tbody>
             </table>
         </div>
     </div>
@@ -85,6 +69,24 @@
 
 @push('js')
     <script>
-        $(function () { $('#returns-table').DataTable(); });
+        $(function () {
+            ERP.serverTable('#returns-table', {
+                url: '{{ route('admin.returns.index') }}',
+                filter: '#returns-filter',
+                count: '#returns-count',
+                noun: 'return',
+                empty: 'No returns requested yet.',
+                order: [[0, 'desc']],
+                columns: [
+                    { data: 'return_id', name: 'return_id' },
+                    { data: 'order_label', name: 'order_label' },
+                    { data: 'client_name', name: 'client_name' },
+                    { data: 'type_name', name: 'type_name' },
+                    { data: 'state', name: 'state' },
+                    { data: 'refund', name: 'refund', searchable: false },
+                    { data: 'actions', name: 'actions', orderable: false, searchable: false },
+                ],
+            });
+        });
     </script>
 @endpush

@@ -15,6 +15,55 @@ use Illuminate\Http\Request;
 
 class SearchController extends Controller
 {
+    public function clients(Request $request): JsonResponse
+    {
+        $search = $request->get('q', '');
+
+        $clients = Client::where('status', true)
+            ->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")->orWhere('unique_id', 'like', "%{$search}%");
+            })
+            ->limit(20)
+            ->get(['id', 'unique_id', 'name', 'phone', 'type']);
+
+        return response()->json($clients);
+    }
+
+    public function products(Request $request): JsonResponse
+    {
+        $search = $request->get('q', '');
+
+        $products = Product::with(['category', 'unit', 'stocks'])
+            ->where('status', true)
+            ->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('unique_id', 'like', "%{$search}%");
+            })
+            ->limit(20)
+            ->get()
+            ->map(fn (Product $product) => [
+                'id' => $product->id,
+                'unique_id' => $product->unique_id,
+                'name' => $product->name,
+                'category' => $product->category?->name,
+                'unit' => $product->unit?->name,
+                'mrp_price' => $product->mrp_price,
+                'purchase_price' => $product->purchase_price,
+                'sale_price' => $product->sale_price,
+                'vat_percentage' => $product->vat_percentage,
+                'stock_qty' => $product->stocks->sum('quantity'),
+                'expiry_dates' => $product->stocks
+                    ->pluck('expiry_date')
+                    ->filter()
+                    ->map(fn ($date) => $date instanceof \DateTimeInterface ? $date->format('Y-m-d') : (string) $date)
+                    ->unique()
+                    ->sort()
+                    ->values(),
+            ]);
+
+        return response()->json($products);
+    }
+
     public function suppliers(Request $request): JsonResponse
     {
         $search = $request->get('q', '');

@@ -5,7 +5,7 @@
 @section('content_body')
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">All Roles</h3>
+            <h3 class="card-title" id="roles-count">All Roles</h3>
             @can('role.create')
                 <div class="card-tools">
                     <a href="{{ route('admin.roles.create') }}" class="btn btn-primary btn-sm">
@@ -16,7 +16,7 @@
         </div>
 
         <div class="card-body">
-            <table id="roles-table" class="table table-bordered table-striped">
+            <table id="roles-table" class="table table-bordered table-striped" style="width: 100%">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -27,34 +27,6 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach ($roles as $role)
-                        <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            <td>{{ $role->name }}</td>
-                            <td>{{ $role->permissions_count }}</td>
-                            <td>{{ $role->users_count }}</td>
-                            <td>{{ $role->created_at->format('Y-m-d') }}</td>
-                            <td>
-                                @can('role.edit')
-                                    <a href="{{ route('admin.roles.edit', $role) }}" class="btn btn-sm btn-warning">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                @endcan
-                                @can('role.delete')
-                                    <form action="{{ route('admin.roles.destroy', $role) }}" method="post"
-                                        class="d-inline" data-confirm="Delete this role?" data-confirm-text="This role will be permanently deleted." data-confirm-button="Delete">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                @endcan
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
             </table>
         </div>
     </div>
@@ -63,8 +35,21 @@
 @push('js')
     <script>
         $(function () {
-            $('#roles-table').DataTable();
-
+            ERP.serverTable('#roles-table', {
+                url: '{{ route('admin.roles.index') }}',
+                count: '#roles-count',
+                noun: 'role',
+                empty: 'No roles defined.',
+                order: [[1, 'asc']],
+                columns: [
+                    { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                    { data: 'name', name: 'name' },
+                    { data: 'permissions_count', name: 'permissions_count', orderable: false, searchable: false },
+                    { data: 'users_count', name: 'users_count', orderable: false, searchable: false },
+                    { data: 'created_on', name: 'created_on', searchable: false },
+                    { data: 'actions', name: 'actions', orderable: false, searchable: false, className: 'text-nowrap' },
+                ],
+            });
         });
     </script>
 @endpush

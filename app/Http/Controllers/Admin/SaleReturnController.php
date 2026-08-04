@@ -8,11 +8,13 @@ use App\Models\Sale;
 use App\Models\SaleReturn;
 use App\Services\CashBankService;
 use App\Services\StockService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Yajra\DataTables\Facades\DataTables;
 use RuntimeException;
 
 /**
@@ -32,26 +34,56 @@ class SaleReturnController extends Controller
     /**
      * Every sale return, across all sales.
      */
-    public function index(Request $request): View
+    public function index(Request $request): View|JsonResponse
     {
         $this->authorizeArea();
 
-        $returns = SaleReturn::with(['sale', 'items.product', 'creator'])
+        if ($request->ajax()) {
+            return $this->indexData($request);
+        }
+
+        return view('admin.sales.returns.index');
+    }
+
+    /**
+     * Server-side DataTables feed for the sale return listing.
+     */
+    protected function indexData(Request $request): JsonResponse
+    {
+        // As on the purchase return list, the filter bar is the only search, so
+        // the header totals below cover exactly the rows being listed.
+        $query = SaleReturn::query()
+            ->with(['sale', 'items.product', 'creator'])
             ->when($request->get('q'), fn ($q, $search) => $q->where(function ($inner) use ($search) {
-                $inner->where('return_id', 'like', "%{$search}%")
+                $inner->where('sale_returns.return_id', 'like', "%{$search}%")
                     ->orWhereHas('sale', fn ($s) => $s->where('sale_id', 'like', "%{$search}%")
                         ->orWhere('customer_name', 'like', "%{$search}%"));
             }))
             ->when($request->get('from_date'), fn ($q, $date) => $q->whereDate('return_date', '>=', $date))
             ->when($request->get('to_date'), fn ($q, $date) => $q->whereDate('return_date', '<=', $date))
-            ->latest('return_date')
-            ->latest('id')
-            ->get();
+            ->select('sale_returns.*');
 
-        return view('admin.sales.returns.index', [
-            'returns' => $returns,
-            'filters' => $request->only(['q', 'from_date', 'to_date']),
-        ]);
+        return DataTables::eloquent($query)
+            ->addColumn('returned_on', fn (SaleReturn $return) => $return->return_date?->format('d M Y'))
+            ->addColumn('return_link', fn (SaleReturn $return) => view('admin.sales.returns.partials.return-cell', compact('return'))->render())
+            ->addColumn('sale_link', fn (SaleReturn $return) => view('admin.sales.returns.partials.sale-cell', compact('return'))->render())
+            ->addColumn('customer_name', fn (SaleReturn $return) => e($return->sale?->customer_name ?: 'Walk-in'))
+            ->addColumn('items_summary', fn (SaleReturn $return) => view('admin.sales.returns.partials.items-cell', compact('return'))->render())
+            ->editColumn('total_amount', fn (SaleReturn $return) => money($return->total_amount))
+            ->addColumn('refunded', fn (SaleReturn $return) => view('admin.sales.returns.partials.refund-cell', compact('return'))->render())
+            ->addColumn('stock_state', fn (SaleReturn $return) => view('admin.sales.returns.partials.stock-cell', compact('return'))->render())
+            ->addColumn('actions', fn (SaleReturn $return) => view('admin.sales.returns.partials.actions', compact('return'))->render())
+            ->orderColumn('returned_on', 'return_date $1')
+            ->orderColumn('return_link', 'return_id $1')
+            ->orderColumn('sale_link', 'sale_id $1')
+            ->orderColumn('refunded', 'refund_amount $1')
+            ->orderColumn('stock_state', 'restock $1')
+            ->with([
+                'returned_value' => money((float) $query->clone()->sum('total_amount')),
+                'refunded_value' => money((float) $query->clone()->sum('refund_amount')),
+            ])
+            ->rawColumns(['return_link', 'sale_link', 'items_summary', 'refunded', 'stock_state', 'actions'])
+            ->toJson();
     }
 
     /**

@@ -7,7 +7,7 @@
         <div class="card-header">
             <h3 class="card-title">Filters</h3>
         </div>
-        <form action="{{ route('admin.purchases.index') }}" method="get">
+        <form action="{{ route('admin.purchases.index') }}" method="get" id="purchases-filter" data-no-submit-guard>
             <div class="card-body row">
                 <div class="col-md-2">
                     <label>Purchase ID</label>
@@ -51,6 +51,7 @@
                 </div>
                 <div class="col-md-1 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="#" class="btn btn-secondary ml-1" data-table-clear>Clear</a>
                 </div>
             </div>
         </form>
@@ -58,7 +59,7 @@
 
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">All Purchases</h3>
+            <h3 class="card-title" id="purchases-count">All Purchases</h3>
             <div class="card-tools">
                 <a href="{{ route('admin.purchases.report') }}" class="btn btn-secondary btn-sm">
                     <i class="fas fa-chart-bar"></i> Report
@@ -70,7 +71,7 @@
         </div>
 
         <div class="card-body">
-            <table id="purchases-table" class="table table-bordered table-striped">
+            <table id="purchases-table" class="table table-bordered table-striped" style="width: 100%">
                 <thead>
                     <tr>
                         <th>Purchase ID</th>
@@ -83,41 +84,6 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach ($purchases as $purchase)
-                        <tr>
-                            <td>{{ $purchase->purchase_id }}</td>
-                            <td>{{ $purchase->supplier?->name }}</td>
-                            <td>{{ $purchase->purchase_date->format('Y-m-d') }}</td>
-                            <td>{{ $purchase->total_amount }}</td>
-                            <td>{{ $purchase->paid_amount }}</td>
-                            <td>{{ $purchase->due_amount }}</td>
-                            <td>
-                                <span class="badge badge-{{ $purchase->payment_status === 'paid' ? 'success' : ($purchase->payment_status === 'partial' ? 'warning' : 'danger') }}">
-                                    {{ ucfirst($purchase->payment_status) }}
-                                </span>
-                            </td>
-                            <td>
-                                <a href="{{ route('admin.purchases.show', $purchase) }}" class="btn btn-sm btn-info">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{{ route('admin.purchases.edit', $purchase) }}" class="btn btn-sm btn-warning">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <a href="{{ route('admin.purchases.returns.index', $purchase) }}" class="btn btn-sm btn-secondary">
-                                    <i class="fas fa-undo"></i>
-                                </a>
-                                <form action="{{ route('admin.purchases.destroy', $purchase) }}" method="post" class="d-inline" data-confirm="Delete this purchase?" data-confirm-text="This will reverse the stock and payment for this purchase." data-confirm-button="Delete">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
             </table>
         </div>
     </div>
@@ -126,8 +92,24 @@
 @push('js')
     <script>
         $(function () {
-            $('#purchases-table').DataTable();
-
+            ERP.serverTable('#purchases-table', {
+                url: '{{ route('admin.purchases.index') }}',
+                filter: '#purchases-filter',
+                count: '#purchases-count',
+                noun: 'purchase',
+                empty: 'No purchases recorded yet.',
+                order: [[2, 'desc']],
+                columns: [
+                    { data: 'purchase_id', name: 'purchase_id' },
+                    { data: 'supplier_name', name: 'supplier_name' },
+                    { data: 'purchase_date', name: 'purchase_date' },
+                    { data: 'total_amount', name: 'total_amount' },
+                    { data: 'paid_amount', name: 'paid_amount' },
+                    { data: 'due_amount', name: 'due_amount' },
+                    { data: 'state', name: 'state' },
+                    { data: 'actions', name: 'actions', orderable: false, searchable: false, className: 'text-nowrap' },
+                ],
+            });
         });
     </script>
 @endpush

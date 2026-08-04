@@ -41,6 +41,7 @@ use App\Http\Controllers\Admin\StoreDispatchController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Admin\SupplierPaymentController;
 use App\Http\Controllers\Admin\UnitController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
@@ -115,6 +116,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     Route::prefix('search')->name('search.')->group(function () {
         Route::get('global', [SearchController::class, 'global'])->name('global');
+        Route::get('clients', [SearchController::class, 'clients'])->name('clients');
+        Route::get('products', [SearchController::class, 'products'])->name('products');
         Route::get('suppliers', [SearchController::class, 'suppliers'])->name('suppliers');
         Route::get('orders', [SearchController::class, 'orders'])->name('orders');
         Route::get('sales', [SearchController::class, 'sales'])->name('sales');
@@ -305,6 +308,16 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('reports/orders/pdf', [ReportController::class, 'ordersPdf'])->name('reports.orders.pdf');
 
     });
+
+    // Sales/purchase/expense reports live under their own module prefix because they
+    // are gated by that module's permission, not report.view. These aliases keep the
+    // /admin/reports/* URLs working; the redirect target does the permission check.
+    Route::get('reports/sales', fn (Request $request) => redirect()->route('admin.sales.report', $request->query()))
+        ->name('reports.sales');
+    Route::get('reports/purchases', fn (Request $request) => redirect()->route('admin.purchases.report', $request->query()))
+        ->name('reports.purchases');
+    Route::get('reports/expenses', fn (Request $request) => redirect()->route('admin.expenses.report', $request->query()))
+        ->name('reports.expenses');
 
     Route::middleware('check.permission:invoice.view')->group(function () {
         Route::post('invoices/{type}/{id}/send', [InvoiceController::class, 'send'])->name('invoices.send');

@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\RoleRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Yajra\DataTables\Facades\DataTables;
 
 class RoleController extends Controller
 {
@@ -37,11 +40,27 @@ class RoleController extends Controller
         'invoice' => 'Invoices',
     ];
 
-    public function index(): View
+    public function index(Request $request): View|JsonResponse
     {
-        $roles = Role::withCount(['permissions', 'users'])->get();
+        if ($request->ajax()) {
+            return $this->indexData();
+        }
 
-        return view('admin.roles.index', compact('roles'));
+        return view('admin.roles.index');
+    }
+
+    /**
+     * Server-side DataTables feed for the role listing.
+     */
+    protected function indexData(): JsonResponse
+    {
+        return DataTables::eloquent(Role::query()->withCount(['permissions', 'users']))
+            ->addIndexColumn()
+            ->addColumn('created_on', fn (Role $role) => $role->created_at?->format('Y-m-d'))
+            ->addColumn('actions', fn (Role $role) => view('admin.roles.partials.actions', compact('role'))->render())
+            ->orderColumn('created_on', 'created_at $1')
+            ->rawColumns(['actions'])
+            ->toJson();
     }
 
     public function create(): View

@@ -5,7 +5,7 @@
 @section('content_body')
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">All Stores</h3>
+            <h3 class="card-title" id="stores-count">All Stores</h3>
             <div class="card-tools">
                 <a href="{{ route('admin.stores.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus"></i> Add Store
@@ -14,7 +14,7 @@
         </div>
 
         <div class="card-body">
-            <table id="stores-table" class="table table-bordered table-striped">
+            <table id="stores-table" class="table table-bordered table-striped" style="width: 100%">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -25,33 +25,6 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach ($stores as $store)
-                        <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            <td>{{ $store->name }}</td>
-                            <td>{{ $store->location ?? '-' }}</td>
-                            <td>{{ $store->stocks_count }}</td>
-                            <td>
-                                <span class="badge badge-{{ $store->status ? 'success' : 'danger' }}">
-                                    {{ $store->status ? 'Active' : 'Inactive' }}
-                                </span>
-                            </td>
-                            <td>
-                                <a href="{{ route('admin.stores.edit', $store) }}" class="btn btn-sm btn-warning">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form action="{{ route('admin.stores.destroy', $store) }}" method="post" class="d-inline" data-confirm="Delete this store?" data-confirm-button="Delete">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
             </table>
         </div>
     </div>
@@ -60,8 +33,21 @@
 @push('js')
     <script>
         $(function () {
-            $('#stores-table').DataTable();
-
+            ERP.serverTable('#stores-table', {
+                url: '{{ route('admin.stores.index') }}',
+                count: '#stores-count',
+                noun: 'store',
+                empty: 'No stores yet.',
+                order: [[1, 'asc']],
+                columns: [
+                    { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                    { data: 'name', name: 'name' },
+                    { data: 'location', name: 'location' },
+                    { data: 'stocks_count', name: 'stocks_count', orderable: false, searchable: false },
+                    { data: 'state', name: 'state' },
+                    { data: 'actions', name: 'actions', orderable: false, searchable: false, className: 'text-nowrap' },
+                ],
+            });
         });
     </script>
 @endpush

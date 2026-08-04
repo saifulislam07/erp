@@ -8,34 +8,57 @@ use App\Http\Requests\Admin\AssetRequest;
 use App\Models\Asset;
 use App\Services\MediaService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
+use Yajra\DataTables\Facades\DataTables;
 
 class AssetController extends Controller
 {
     public function __construct(private readonly MediaService $media) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|JsonResponse
+    {
+        if ($request->ajax()) {
+            return $this->indexData($request);
+        }
+
+        return view('admin.assets.index');
+    }
+
+    /**
+     * Server-side DataTables feed for the asset listing.
+     */
+    protected function indexData(Request $request): JsonResponse
     {
         $query = Asset::query();
-
-        if ($search = $request->get('q')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('asset_id', 'like', "%{$search}%")
-                    ->orWhere('name', 'like', "%{$search}%")
-                    ->orWhere('serial_number', 'like', "%{$search}%");
-            });
-        }
 
         if ($status = $request->get('status')) {
             $query->where('status', $status);
         }
 
-        $assets = $query->latest()->get();
+        return DataTables::eloquent($query)
+            ->filter(function ($query) use ($request) {
+                $search = $request->get('q') ?: $request->input('search.value');
 
-        return view('admin.assets.index', compact('assets'));
+                if (filled($search)) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('asset_id', 'like', "%{$search}%")
+                            ->orWhere('name', 'like', "%{$search}%")
+                            ->orWhere('serial_number', 'like', "%{$search}%")
+                            ->orWhere('category', 'like', "%{$search}%");
+                    });
+                }
+            }, true)
+            ->editColumn('serial_number', fn (Asset $asset) => e($asset->serial_number ?: '-'))
+            ->editColumn('category', fn (Asset $asset) => e($asset->category ?: '-'))
+            ->addColumn('state', fn (Asset $asset) => view('admin.assets.partials.status-cell', compact('asset'))->render())
+            ->addColumn('actions', fn (Asset $asset) => view('admin.assets.partials.actions', compact('asset'))->render())
+            ->orderColumn('state', 'status $1')
+            ->rawColumns(['state', 'actions'])
+            ->toJson();
     }
 
     public function create(): View

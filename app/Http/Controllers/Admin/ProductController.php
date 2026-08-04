@@ -19,48 +19,76 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Yajra\DataTables\Facades\DataTables;
 
 class ProductController extends Controller
 {
     public function __construct(private readonly MediaService $media) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|JsonResponse
     {
         $this->authorize('viewAny', Product::class);
 
+        if ($request->ajax()) {
+            return $this->indexData($request);
+        }
+
+        return view('admin.products.index', ['categories' => Category::topLevel()]);
+    }
+
+    /**
+     * Server-side DataTables feed for the product listing.
+     */
+    protected function indexData(Request $request): JsonResponse
+    {
         // `discounts` is eager loaded because every row asks the model for its
         // running discount; without it the listing issues one query per product.
-        $query = Product::with(['category', 'subCategory', 'unit', 'discounts']);
+        $query = Product::query()
+            ->with(['category', 'subCategory', 'unit', 'discounts'])
+            ->select('products.*');
 
-        if ($search = $request->get('q')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('unique_id', 'like', "%{$search}%");
-            });
+        // Stock arrives as a correlated subquery so the column stays sortable
+        // in SQL instead of being stitched on after the page was fetched.
+        if (Schema::hasTable('stocks')) {
+            $query->addSelect(['stock_qty' => DB::table('stocks')
+                ->selectRaw('COALESCE(SUM(quantity), 0)')
+                ->whereColumn('product_id', 'products.id'),
+            ]);
         }
 
         if ($categoryId = $request->get('category_id')) {
             $query->where('category_id', $categoryId);
         }
 
-        $products = $query->latest()->get();
+        return DataTables::eloquent($query)
+            ->filter(function ($query) use ($request) {
+                // The filter bar's `q` and the DataTables search box share one
+                // implementation so both narrow the list the same way.
+                $search = $request->get('q') ?: $request->input('search.value');
 
-        // One grouped query for every product's stock rather than one per row.
-        $stockByProduct = Schema::hasTable('stocks')
-            ? DB::table('stocks')
-                ->whereIn('product_id', $products->pluck('id'))
-                ->groupBy('product_id')
-                ->selectRaw('product_id, SUM(quantity) as total')
-                ->pluck('total', 'product_id')
-            : collect();
-
-        $products->each(function (Product $product) use ($stockByProduct) {
-            $product->stock_qty = (float) ($stockByProduct[$product->id] ?? 0);
-        });
-
-        $categories = Category::topLevel();
-
-        return view('admin.products.index', compact('products', 'categories'));
+                if (filled($search)) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('products.name', 'like', "%{$search}%")
+                            ->orWhere('products.unique_id', 'like', "%{$search}%");
+                    });
+                }
+            }, true)
+            ->editColumn('purchase_price', fn (Product $product) => money($product->purchase_price))
+            ->addColumn('thumb', fn (Product $product) => view('admin.products.partials.thumb', compact('product'))->render())
+            ->addColumn('product', fn (Product $product) => view('admin.products.partials.name-cell', compact('product'))->render())
+            ->addColumn('category_name', fn (Product $product) => view('admin.products.partials.category-cell', compact('product'))->render())
+            ->addColumn('unit_name', fn (Product $product) => e($product->unit?->name ?? '—'))
+            ->addColumn('price', fn (Product $product) => view('admin.products.partials.price-cell', compact('product'))->render())
+            ->addColumn('stock', fn (Product $product) => qty((float) ($product->stock_qty ?? 0)))
+            ->addColumn('state', fn (Product $product) => view('admin.products.partials.status-cell', compact('product'))->render())
+            ->addColumn('actions', fn (Product $product) => view('admin.products.partials.actions', compact('product'))->render())
+            ->orderColumn('category_name', 'category_id $1')
+            ->orderColumn('unit_name', 'unit_id $1')
+            ->orderColumn('price', 'sale_price $1')
+            ->orderColumn('stock', 'stock_qty $1')
+            ->orderColumn('state', 'status $1')
+            ->rawColumns(['thumb', 'product', 'category_name', 'price', 'state', 'actions'])
+            ->toJson();
     }
 
     public function create(): View
@@ -205,36 +233,13 @@ class ProductController extends Controller
         return redirect()->route('admin.products.index')->with('success', 'Product deleted successfully.');
     }
 
-    public function search(Request $request): JsonResponse
+    /**
+     * Kept as an alias so existing AJAX callers of /admin/products/search keep
+     * working. The canonical implementation lives in SearchController.
+     */
+    public function search(Request $request, SearchController $search): JsonResponse
     {
-        $search = $request->get('q', '');
-
-        $products = Product::with(['category', 'unit'])
-            ->where('status', true)
-            ->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('unique_id', 'like', "%{$search}%");
-            })
-            ->limit(20)
-            ->get()
-            ->map(function (Product $product) {
-                return [
-                    'id' => $product->id,
-                    'unique_id' => $product->unique_id,
-                    'name' => $product->name,
-                    'category' => $product->category?->name,
-                    'unit' => $product->unit?->name,
-                    'mrp_price' => $product->mrp_price,
-                    'purchase_price' => $product->purchase_price,
-                    'sale_price' => $product->sale_price,
-                    'vat_percentage' => $product->vat_percentage,
-                    'stock_qty' => Schema::hasTable('stocks')
-                        ? DB::table('stocks')->where('product_id', $product->id)->sum('quantity')
-                        : 0,
-                ];
-            });
-
-        return response()->json($products);
+        return $search->products($request);
     }
 
     public function report(Request $request): View

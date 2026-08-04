@@ -1066,6 +1066,18 @@ hr {
     color: var(--erp-ink);
 }
 
+/* --------------------------------------------------- stock expiry rows */
+
+/*
+ * The stock listing tints whole rows by how near a batch is to expiring.
+ * `table-danger` / `table-warning` come from Bootstrap; this is the softer
+ * third step for batches that still have one to three months left.
+ */
+.table tr.table-warning-soft,
+.table tr.table-warning-soft > td {
+    background-color: var(--erp-warning-050);
+}
+
 /* ------------------------------------------------------------- printing */
 @media print {
     .main-sidebar,

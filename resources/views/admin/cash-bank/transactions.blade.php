@@ -7,7 +7,7 @@
         <div class="card-header">
             <h3 class="card-title">Filters</h3>
         </div>
-        <form action="{{ route('admin.cash-bank.transactions') }}" method="get">
+        <form action="{{ route('admin.cash-bank.transactions') }}" method="get" id="tx-filter" data-no-submit-guard>
             <div class="card-body row">
                 <div class="col-md-2">
                     <label>Method</label>
@@ -40,6 +40,7 @@
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="#" class="btn btn-secondary ml-1" data-table-clear>Clear</a>
                 </div>
             </div>
         </form>
@@ -47,13 +48,13 @@
 
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">All Transactions</h3>
+            <h3 class="card-title" id="tx-count">All Transactions</h3>
             <div class="card-tools">
                 <a href="{{ route('admin.cash-bank.index') }}" class="btn btn-secondary btn-sm">Back</a>
             </div>
         </div>
         <div class="card-body">
-            <table id="tx-table" class="table table-bordered table-striped">
+            <table id="tx-table" class="table table-bordered table-striped" style="width: 100%">
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -65,23 +66,6 @@
                         <th>By</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach ($transactions as $tx)
-                        <tr>
-                            <td>{{ $tx->transaction_date->format('Y-m-d') }}</td>
-                            <td>
-                                <span class="badge badge-{{ $tx->transaction_type === 'credit' ? 'success' : 'danger' }}">
-                                    {{ ucfirst($tx->transaction_type) }}
-                                </span>
-                            </td>
-                            <td>{{ ucfirst(str_replace('_', ' ', $tx->method)) }}</td>
-                            <td>{{ $tx->amount }}</td>
-                            <td>{{ class_basename($tx->reference_type) }} #{{ $tx->reference_id }}</td>
-                            <td>{{ $tx->description }}</td>
-                            <td>{{ $tx->creator?->name }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
             </table>
         </div>
     </div>
@@ -90,7 +74,23 @@
 @push('js')
     <script>
         $(function () {
-            $('#tx-table').DataTable();
+            ERP.serverTable('#tx-table', {
+                url: '{{ route('admin.cash-bank.transactions') }}',
+                filter: '#tx-filter',
+                count: '#tx-count',
+                noun: 'transaction',
+                empty: 'No transactions recorded yet.',
+                order: [[0, 'desc']],
+                columns: [
+                    { data: 'dated_on', name: 'dated_on', searchable: false },
+                    { data: 'type_badge', name: 'type_badge' },
+                    { data: 'method', name: 'method' },
+                    { data: 'amount', name: 'amount' },
+                    { data: 'reference', name: 'reference' },
+                    { data: 'description', name: 'description' },
+                    { data: 'created_by_name', name: 'created_by_name' },
+                ],
+            });
         });
     </script>
 @endpush

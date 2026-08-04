@@ -12,11 +12,13 @@ use App\Models\Supplier;
 use App\Services\CashBankService;
 use App\Services\StockService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
+use Yajra\DataTables\Facades\DataTables;
 
 class PurchaseController extends Controller
 {
@@ -25,11 +27,23 @@ class PurchaseController extends Controller
         private readonly CashBankService $cashBankService,
     ) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|JsonResponse
     {
         $this->authorize('viewAny', Purchase::class);
 
-        $query = Purchase::with('supplier');
+        if ($request->ajax()) {
+            return $this->indexData($request);
+        }
+
+        return view('admin.purchases.index', ['suppliers' => Supplier::orderBy('name')->get()]);
+    }
+
+    /**
+     * Server-side DataTables feed for the purchase listing.
+     */
+    protected function indexData(Request $request): JsonResponse
+    {
+        $query = Purchase::query()->with('supplier')->select('purchases.*');
 
         if ($search = $request->get('purchase_id')) {
             $query->where('purchase_id', 'like', "%{$search}%");
@@ -54,10 +68,26 @@ class PurchaseController extends Controller
             default => null,
         };
 
-        $purchases = $query->latest()->get();
-        $suppliers = Supplier::orderBy('name')->get();
+        return DataTables::eloquent($query)
+            ->filter(function ($query) use ($request) {
+                $search = $request->input('search.value');
 
-        return view('admin.purchases.index', compact('purchases', 'suppliers'));
+                if (filled($search)) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('purchases.purchase_id', 'like', "%{$search}%")
+                            ->orWhere('purchases.invoice_number', 'like', "%{$search}%")
+                            ->orWhereHas('supplier', fn ($s) => $s->where('name', 'like', "%{$search}%"));
+                    });
+                }
+            }, true)
+            ->addColumn('supplier_name', fn (Purchase $purchase) => e($purchase->supplier?->name ?? '—'))
+            ->editColumn('purchase_date', fn (Purchase $purchase) => $purchase->purchase_date?->format('Y-m-d'))
+            ->addColumn('state', fn (Purchase $purchase) => view('admin.purchases.partials.status-cell', compact('purchase'))->render())
+            ->addColumn('actions', fn (Purchase $purchase) => view('admin.purchases.partials.actions', compact('purchase'))->render())
+            ->orderColumn('supplier_name', 'supplier_id $1')
+            ->orderColumn('state', 'payment_status $1')
+            ->rawColumns(['state', 'actions'])
+            ->toJson();
     }
 
     public function create(): View

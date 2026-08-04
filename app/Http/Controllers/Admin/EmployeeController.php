@@ -8,21 +8,47 @@ use App\Http\Requests\Admin\EmployeeRequest;
 use App\Models\Department;
 use App\Models\Salary;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
+use Yajra\DataTables\Facades\DataTables;
 
 class EmployeeController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View|JsonResponse
     {
-        $employees = User::with(['department', 'roles'])
-            ->where('is_admin', false)
-            ->latest()
-            ->get();
+        if ($request->ajax()) {
+            return $this->indexData();
+        }
 
-        return view('admin.employees.index', compact('employees'));
+        return view('admin.employees.index');
+    }
+
+    /**
+     * Server-side DataTables feed for the employee listing.
+     */
+    protected function indexData(): JsonResponse
+    {
+        $query = User::query()
+            ->with(['department', 'roles'])
+            ->where('is_admin', false)
+            ->select('users.*');
+
+        return DataTables::eloquent($query)
+            ->addIndexColumn()
+            ->addColumn('department_name', fn (User $employee) => e($employee->department?->name ?? '-'))
+            ->addColumn('role_names', fn (User $employee) => e($employee->roles->pluck('name')->join(', ') ?: '-'))
+            ->addColumn('state', fn (User $employee) => view('admin.employees.partials.status-cell', compact('employee'))->render())
+            ->addColumn('actions', fn (User $employee) => view('admin.employees.partials.actions', compact('employee'))->render())
+            ->filterColumn('department_name', fn ($query, $keyword) => $query->whereHas('department', fn ($d) => $d->where('name', 'like', "%{$keyword}%")))
+            ->filterColumn('role_names', fn ($query, $keyword) => $query->whereHas('roles', fn ($r) => $r->where('name', 'like', "%{$keyword}%")))
+            ->orderColumn('department_name', 'department_id $1')
+            ->orderColumn('state', 'status $1')
+            ->rawColumns(['state', 'actions'])
+            ->toJson();
     }
 
     public function create(): View

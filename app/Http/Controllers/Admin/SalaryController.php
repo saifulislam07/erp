@@ -7,18 +7,42 @@ use App\Http\Requests\Admin\SalaryRequest;
 use App\Models\Salary;
 use App\Models\User;
 use App\Services\CashBankService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Yajra\DataTables\Facades\DataTables;
 
 class SalaryController extends Controller
 {
     public function __construct(private readonly CashBankService $cashBankService) {}
 
-    public function index(): View
+    public function index(Request $request): View|JsonResponse
     {
-        $salaries = Salary::with('user')->latest()->get();
+        if ($request->ajax()) {
+            return $this->indexData();
+        }
 
-        return view('admin.salaries.index', compact('salaries'));
+        return view('admin.salaries.index');
+    }
+
+    /**
+     * Server-side DataTables feed for the salary listing.
+     */
+    protected function indexData(): JsonResponse
+    {
+        $query = Salary::query()->with('user')->select('salaries.*');
+
+        return DataTables::eloquent($query)
+            ->addColumn('employee_name', fn (Salary $salary) => e($salary->user?->name ?? '—'))
+            ->editColumn('payment_method', fn (Salary $salary) => ucfirst($salary->payment_method))
+            ->addColumn('paid_on', fn (Salary $salary) => $salary->paid_at?->format('Y-m-d') ?? '-')
+            ->addColumn('actions', fn (Salary $salary) => view('admin.salaries.partials.actions', compact('salary'))->render())
+            ->filterColumn('employee_name', fn ($query, $keyword) => $query->whereHas('user', fn ($u) => $u->where('name', 'like', "%{$keyword}%")))
+            ->orderColumn('employee_name', 'user_id $1')
+            ->orderColumn('paid_on', 'paid_at $1')
+            ->rawColumns(['actions'])
+            ->toJson();
     }
 
     public function create(): View

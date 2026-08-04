@@ -4,17 +4,13 @@
 
 @section('content_body')
     @include('admin.partials.return-filters', [
-        'clearRoute' => route('admin.sale-returns.index'),
+        'formId' => 'sale-returns-filter',
         'searchLabel' => 'Return, sale or customer',
     ])
 
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">
-                {{ $returns->count() }} {{ Str::plural('return', $returns->count()) }}
-                &middot; {{ money($returns->sum(fn ($r) => (float) $r->total_amount)) }} returned
-                &middot; {{ money($returns->sum(fn ($r) => (float) $r->refund_amount)) }} refunded
-            </h3>
+            <h3 class="card-title" id="sale-returns-summary">Loading…</h3>
             <div class="card-tools">
                 <a href="{{ route('admin.sales.index') }}" class="btn btn-secondary btn-sm">
                     <i class="fas fa-cash-register mr-1"></i> Sales
@@ -23,95 +19,23 @@
         </div>
 
         <div class="card-body p-0">
-            @if ($returns->isEmpty())
-                <div class="empty-state">
-                    <i class="fas fa-undo"></i>
-                    <p>
-                        @if (array_filter($filters))
-                            Nothing matches this filter.
-                        @else
-                            No sale has been returned yet. Open a sale and choose “Return items” to record one.
-                        @endif
-                    </p>
-                </div>
-            @else
-                <div class="table-responsive">
-                    <table id="returns-table" class="table table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Return</th>
-                                <th>Sale</th>
-                                <th>Customer</th>
-                                <th>Items</th>
-                                <th class="text-right">Value</th>
-                                <th class="text-right">Refunded</th>
-                                <th>Stock</th>
-                                <th class="text-right" data-orderable="false"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($returns as $return)
-                                <tr>
-                                    <td class="text-nowrap">{{ $return->return_date->format('d M Y') }}</td>
-                                    <td>
-                                        <a href="{{ route('admin.sale-returns.show', $return) }}">{{ $return->return_id }}</a>
-                                    </td>
-                                    <td>
-                                        @if ($return->sale)
-                                            <a href="{{ route('admin.sales.show', $return->sale) }}">{{ $return->sale->sale_id }}</a>
-                                        @else
-                                            <span class="text-muted">—</span>
-                                        @endif
-                                    </td>
-                                    <td>{{ $return->sale?->customer_name ?: 'Walk-in' }}</td>
-                                    <td>
-                                        {{ $return->items->count() }} {{ Str::plural('line', $return->items->count()) }}
-                                        <small class="d-block text-muted">
-                                            {{ $return->items->take(2)->map(fn ($i) => $i->product?->name)->filter()->implode(', ') }}{{ $return->items->count() > 2 ? '…' : '' }}
-                                        </small>
-                                    </td>
-                                    <td class="text-right">{{ money($return->total_amount) }}</td>
-                                    <td class="text-right">
-                                        @if ((float) $return->refund_amount > 0)
-                                            {{ money($return->refund_amount) }}
-                                            <small class="d-block text-muted">
-                                                {{ ucwords(str_replace('_', ' ', $return->refund_method)) }}
-                                            </small>
-                                        @else
-                                            <span class="text-muted">Credited</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <span class="badge {{ $return->restock ? 'badge-soft-success' : 'badge-soft-muted' }}">
-                                            {{ $return->restock ? 'Restocked' : 'Written off' }}
-                                        </span>
-                                    </td>
-                                    <td class="text-right text-nowrap">
-                                        <a href="{{ route('admin.sale-returns.show', $return) }}"
-                                           class="btn btn-sm btn-secondary" title="View">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        @if (auth()->user()->is_admin)
-                                            <form action="{{ route('admin.sale-returns.destroy', $return) }}" method="post"
-                                                  class="d-inline"
-                                                  data-confirm="Delete this return?"
-                                                  data-confirm-text="The restocked goods are taken back out and any refund is reversed in the cash ledger."
-                                                  data-confirm-button="Delete">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger" title="Delete">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
+            <div class="table-responsive">
+                <table id="returns-table" class="table table-hover mb-0" style="width: 100%">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Return</th>
+                            <th>Sale</th>
+                            <th>Customer</th>
+                            <th>Items</th>
+                            <th class="text-right">Value</th>
+                            <th class="text-right">Refunded</th>
+                            <th>Stock</th>
+                            <th class="text-right"></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
         </div>
     </div>
 @endsection
@@ -119,7 +43,49 @@
 @push('js')
     <script>
         $(function () {
-            $('#returns-table').DataTable({ searching: false, order: [], pageLength: 25 });
+            var returnedValue = '';
+            var refundedValue = '';
+
+            var table = ERP.serverTable('#returns-table', {
+                url: '{{ route('admin.sale-returns.index') }}',
+                filter: '#sale-returns-filter',
+                empty: 'No sale has been returned yet. Open a sale and choose “Return items” to record one.',
+                order: [[0, 'desc']],
+                options: {
+                    // The filter bar above is the only search on this screen, which
+                    // is also what the server-side totals are calculated over.
+                    searching: false,
+                    ajax: {
+                        dataSrc: function (json) {
+                            returnedValue = json.returned_value;
+                            refundedValue = json.refunded_value;
+
+                            return json.data;
+                        }
+                    }
+                },
+                columns: [
+                    { data: 'returned_on', name: 'returned_on', className: 'text-nowrap' },
+                    { data: 'return_link', name: 'return_link' },
+                    { data: 'sale_link', name: 'sale_link' },
+                    { data: 'customer_name', name: 'customer_name', orderable: false },
+                    { data: 'items_summary', name: 'items_summary', orderable: false },
+                    { data: 'total_amount', name: 'total_amount', className: 'text-right' },
+                    { data: 'refunded', name: 'refunded', className: 'text-right' },
+                    { data: 'stock_state', name: 'stock_state' },
+                    { data: 'actions', name: 'actions', orderable: false, className: 'text-right text-nowrap' },
+                ],
+            });
+
+            table.on('draw.dt', function () {
+                var total = table.page.info().recordsDisplay;
+
+                $('#sale-returns-summary').text(
+                    total + ' ' + (total === 1 ? 'return' : 'returns')
+                    + ' · ' + returnedValue + ' returned'
+                    + ' · ' + refundedValue + ' refunded'
+                );
+            });
         });
     </script>
 @endpush

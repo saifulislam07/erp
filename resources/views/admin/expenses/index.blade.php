@@ -7,7 +7,7 @@
         <div class="card-header">
             <h3 class="card-title">Filters</h3>
         </div>
-        <form action="{{ route('admin.expenses.index') }}" method="get">
+        <form action="{{ route('admin.expenses.index') }}" method="get" id="expenses-filter" data-no-submit-guard>
             <div class="card-body row">
                 <div class="col-md-3">
                     <label>Expense Head</label>
@@ -36,6 +36,7 @@
                 </div>
                 <div class="col-md-3 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="#" class="btn btn-secondary ml-1" data-table-clear>Clear</a>
                 </div>
             </div>
         </form>
@@ -43,7 +44,7 @@
 
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">All Expenses</h3>
+            <h3 class="card-title" id="expenses-count">All Expenses</h3>
             <div class="card-tools">
                 <a href="{{ route('admin.expense-heads.index') }}" class="btn btn-secondary btn-sm">Expense Heads</a>
                 <a href="{{ route('admin.expenses.report') }}" class="btn btn-secondary btn-sm">Report</a>
@@ -51,7 +52,7 @@
             </div>
         </div>
         <div class="card-body">
-            <table id="expenses-table" class="table table-bordered table-striped">
+            <table id="expenses-table" class="table table-bordered table-striped" style="width: 100%">
                 <thead>
                     <tr>
                         <th>Expense ID</th>
@@ -62,31 +63,6 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach ($expenses as $expense)
-                        <tr>
-                            <td>{{ $expense->expense_id }}</td>
-                            <td>{{ $expense->expenseHead->name }}</td>
-                            <td>{{ $expense->amount }}</td>
-                            <td>{{ $expense->expense_date->format('Y-m-d') }}</td>
-                            <td>{{ ucfirst($expense->payment_method) }}</td>
-                            <td>
-                                @can('invoice.view')
-                                    <a href="{{ route('admin.invoices.expense', $expense) }}" class="btn btn-sm btn-secondary"
-                                        target="_blank" title="View invoice">
-                                        <i class="fas fa-file-invoice"></i>
-                                    </a>
-                                @endcan
-                                <a href="{{ route('admin.expenses.edit', $expense) }}" class="btn btn-sm btn-warning">Edit</a>
-                                <form action="{{ route('admin.expenses.destroy', $expense) }}" method="post" class="d-inline" data-confirm="Delete this expense?" data-confirm-text="This will reverse the cash/bank debit for this expense." data-confirm-button="Delete">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
             </table>
         </div>
     </div>
@@ -95,8 +71,22 @@
 @push('js')
     <script>
         $(function () {
-            $('#expenses-table').DataTable();
-
+            ERP.serverTable('#expenses-table', {
+                url: '{{ route('admin.expenses.index') }}',
+                filter: '#expenses-filter',
+                count: '#expenses-count',
+                noun: 'expense',
+                empty: 'No expenses recorded yet.',
+                order: [[3, 'desc']],
+                columns: [
+                    { data: 'expense_id', name: 'expense_id' },
+                    { data: 'head_name', name: 'head_name' },
+                    { data: 'amount', name: 'amount' },
+                    { data: 'expense_date', name: 'expense_date' },
+                    { data: 'payment_method', name: 'payment_method' },
+                    { data: 'actions', name: 'actions', orderable: false, searchable: false, className: 'text-nowrap' },
+                ],
+            });
         });
     </script>
 @endpush

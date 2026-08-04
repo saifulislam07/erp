@@ -5,7 +5,7 @@
 @section('content_body')
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">All Employees</h3>
+            <h3 class="card-title" id="employees-count">All Employees</h3>
             <div class="card-tools">
                 <a href="{{ route('admin.employees.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus"></i> Add Employee
@@ -14,7 +14,7 @@
         </div>
 
         <div class="card-body">
-            <table id="employees-table" class="table table-bordered table-striped">
+            <table id="employees-table" class="table table-bordered table-striped" style="width: 100%">
                 <thead>
                     <tr>
                         <th>#</th>
@@ -26,45 +26,6 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach ($employees as $employee)
-                        <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            <td>{{ $employee->name }}</td>
-                            <td>{{ $employee->employee_id }}</td>
-                            <td>{{ $employee->department->name ?? '-' }}</td>
-                            <td>{{ $employee->roles->pluck('name')->join(', ') ?: '-' }}</td>
-                            <td>
-                                <form action="{{ route('admin.employees.toggle-status', $employee) }}" method="post">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm {{ $employee->status ? 'btn-success' : 'btn-secondary' }}">
-                                        {{ $employee->status ? 'Active' : 'Inactive' }}
-                                    </button>
-                                </form>
-                            </td>
-                            <td>
-                                <a href="{{ route('admin.employees.show', $employee) }}" class="btn btn-sm btn-primary">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{{ route('admin.employees.edit', $employee) }}" class="btn btn-sm btn-warning">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <button type="button" class="btn btn-sm btn-info reset-password-btn"
-                                    data-url="{{ route('admin.employees.reset-password', $employee) }}">
-                                    <i class="fas fa-key"></i>
-                                </button>
-                                <form action="{{ route('admin.employees.destroy', $employee) }}" method="post"
-                                    class="d-inline" data-confirm="Delete this employee?" data-confirm-text="This employee will be soft deleted." data-confirm-button="Delete">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
             </table>
         </div>
     </div>
@@ -100,9 +61,25 @@
 @push('js')
     <script>
         $(function () {
-            $('#employees-table').DataTable();
+            ERP.serverTable('#employees-table', {
+                url: '{{ route('admin.employees.index') }}',
+                count: '#employees-count',
+                noun: 'employee',
+                empty: 'No employees yet.',
+                order: [[1, 'asc']],
+                columns: [
+                    { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                    { data: 'name', name: 'name' },
+                    { data: 'employee_id', name: 'employee_id' },
+                    { data: 'department_name', name: 'department_name' },
+                    { data: 'role_names', name: 'role_names', orderable: false },
+                    { data: 'state', name: 'state' },
+                    { data: 'actions', name: 'actions', orderable: false, searchable: false, className: 'text-nowrap' },
+                ],
+            });
 
-            $('.reset-password-btn').on('click', function () {
+            // Delegated: the buttons are redrawn by DataTables on every page change.
+            $(document).on('click', '.reset-password-btn', function () {
                 $('#reset-password-form').attr('action', $(this).data('url'));
                 $('#reset-password-modal').modal('show');
             });

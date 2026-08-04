@@ -5,16 +5,33 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UnitRequest;
 use App\Models\Unit;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Yajra\DataTables\Facades\DataTables;
 
 class UnitController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View|JsonResponse
     {
-        $units = Unit::withCount('products')->latest()->get();
+        if ($request->ajax()) {
+            return $this->indexData();
+        }
 
-        return view('admin.units.index', compact('units'));
+        return view('admin.units.index');
+    }
+
+    /**
+     * Server-side DataTables feed for the unit listing.
+     */
+    protected function indexData(): JsonResponse
+    {
+        return DataTables::eloquent(Unit::query()->withCount('products'))
+            ->addIndexColumn()
+            ->addColumn('actions', fn (Unit $unit) => view('admin.units.partials.actions', compact('unit'))->render())
+            ->rawColumns(['actions'])
+            ->toJson();
     }
 
     public function create(): View

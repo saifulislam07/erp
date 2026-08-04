@@ -13,28 +13,45 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Yajra\DataTables\Facades\DataTables;
 
 class ClientController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View|JsonResponse
     {
-        $clients = Client::latest()->get();
+        if ($request->ajax()) {
+            return $this->indexData();
+        }
 
-        return view('admin.clients.index', compact('clients'));
+        return view('admin.clients.index');
     }
 
-    public function search(Request $request): JsonResponse
+    /**
+     * Server-side DataTables feed for the client/agent listing.
+     */
+    protected function indexData(): JsonResponse
     {
-        $search = $request->get('q', '');
+        return DataTables::eloquent(Client::query())
+            ->addIndexColumn()
+            ->addColumn('type_badge', fn (Client $client) => view('admin.clients.partials.type-cell', compact('client'))->render())
+            ->addColumn('phone_number', fn (Client $client) => e($client->phone ?: '-'))
+            ->addColumn('state', fn (Client $client) => view('admin.clients.partials.status-cell', compact('client'))->render())
+            ->addColumn('actions', fn (Client $client) => view('admin.clients.partials.actions', compact('client'))->render())
+            ->orderColumn('type_badge', 'type $1')
+            ->orderColumn('phone_number', 'phone $1')
+            ->orderColumn('state', 'status $1')
+            ->filterColumn('phone_number', fn ($query, $keyword) => $query->where('phone', 'like', "%{$keyword}%"))
+            ->rawColumns(['type_badge', 'state', 'actions'])
+            ->toJson();
+    }
 
-        $clients = Client::where('status', true)
-            ->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")->orWhere('unique_id', 'like', "%{$search}%");
-            })
-            ->limit(20)
-            ->get(['id', 'unique_id', 'name', 'phone', 'type']);
-
-        return response()->json($clients);
+    /**
+     * Kept as an alias so existing AJAX callers of /admin/clients/search keep
+     * working. The canonical implementation lives in SearchController.
+     */
+    public function search(Request $request, SearchController $search): JsonResponse
+    {
+        return $search->clients($request);
     }
 
     public function create(): View

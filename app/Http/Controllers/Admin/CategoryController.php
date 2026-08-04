@@ -8,15 +8,38 @@ use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Yajra\DataTables\Facades\DataTables;
 
 class CategoryController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View|JsonResponse
     {
-        $categories = Category::with('parent')->withCount('products')->latest()->get();
+        if ($request->ajax()) {
+            return $this->indexData();
+        }
 
-        return view('admin.categories.index', compact('categories'));
+        return view('admin.categories.index');
+    }
+
+    /**
+     * Server-side DataTables feed for the category listing.
+     */
+    protected function indexData(): JsonResponse
+    {
+        $query = Category::query()->with('parent')->withCount('products')->select('categories.*');
+
+        return DataTables::eloquent($query)
+            ->addIndexColumn()
+            ->addColumn('parent_name', fn (Category $category) => e($category->parent?->name ?? '-'))
+            ->addColumn('state', fn (Category $category) => view('admin.categories.partials.status-cell', compact('category'))->render())
+            ->addColumn('actions', fn (Category $category) => view('admin.categories.partials.actions', compact('category'))->render())
+            ->filterColumn('parent_name', fn ($query, $keyword) => $query->whereHas('parent', fn ($p) => $p->where('name', 'like', "%{$keyword}%")))
+            ->orderColumn('parent_name', 'parent_id $1')
+            ->orderColumn('state', 'status $1')
+            ->rawColumns(['state', 'actions'])
+            ->toJson();
     }
 
     public function create(): View

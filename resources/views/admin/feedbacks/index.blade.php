@@ -7,7 +7,7 @@
         <div class="card-header">
             <h3 class="card-title">Filters</h3>
         </div>
-        <form action="{{ route('admin.feedbacks.index') }}" method="get">
+        <form action="{{ route('admin.feedbacks.index') }}" method="get" id="feedback-filter" data-no-submit-guard>
             <div class="card-body row">
                 <div class="col-md-2">
                     <label>Type</label>
@@ -37,6 +37,7 @@
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="#" class="btn btn-secondary ml-1" data-table-clear>Clear</a>
                 </div>
             </div>
         </form>
@@ -44,10 +45,10 @@
 
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">All Feedback</h3>
+            <h3 class="card-title" id="feedback-count">All Feedback</h3>
         </div>
         <div class="card-body">
-            <table id="feedback-table" class="table table-bordered table-striped">
+            <table id="feedback-table" class="table table-bordered table-striped" style="width: 100%">
                 <thead>
                     <tr>
                         <th>Order</th>
@@ -58,18 +59,6 @@
                         <th>Date</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach ($feedbacks as $feedback)
-                        <tr>
-                            <td>{{ $feedback->order->order_id }}</td>
-                            <td>{{ $feedback->client->name }}</td>
-                            <td>{{ ucfirst($feedback->type) }}</td>
-                            <td>{{ $feedback->rating }} / 5</td>
-                            <td>{{ $feedback->comment }}</td>
-                            <td>{{ $feedback->created_at->format('Y-m-d') }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
             </table>
         </div>
     </div>
@@ -77,6 +66,23 @@
 
 @push('js')
     <script>
-        $(function () { $('#feedback-table').DataTable(); });
+        $(function () {
+            ERP.serverTable('#feedback-table', {
+                url: '{{ route('admin.feedbacks.index') }}',
+                filter: '#feedback-filter',
+                count: '#feedback-count',
+                noun: 'feedback entry',
+                empty: 'No feedback submitted yet.',
+                order: [[5, 'desc']],
+                columns: [
+                    { data: 'order_label', name: 'order_label' },
+                    { data: 'client_name', name: 'client_name' },
+                    { data: 'type', name: 'type' },
+                    { data: 'rating', name: 'rating' },
+                    { data: 'comment', name: 'comment' },
+                    { data: 'left_on', name: 'left_on', searchable: false },
+                ],
+            });
+        });
     </script>
 @endpush

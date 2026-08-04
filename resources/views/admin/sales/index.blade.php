@@ -7,7 +7,7 @@
         <div class="card-header">
             <h3 class="card-title">Filters</h3>
         </div>
-        <form action="{{ route('admin.sales.index') }}" method="get">
+        <form action="{{ route('admin.sales.index') }}" method="get" id="sales-filter" data-no-submit-guard>
             <div class="card-body row">
                 <div class="col-md-2">
                     <label>From Date</label>
@@ -31,6 +31,7 @@
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="#" class="btn btn-secondary ml-1" data-table-clear>Clear</a>
                 </div>
             </div>
         </form>
@@ -38,7 +39,7 @@
 
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">All Sales</h3>
+            <h3 class="card-title" id="sales-count">All Sales</h3>
             <div class="card-tools">
                 <a href="{{ route('admin.sales.report') }}" class="btn btn-secondary btn-sm">
                     <i class="fas fa-chart-bar"></i> Report
@@ -52,7 +53,7 @@
         </div>
 
         <div class="card-body">
-            <table id="sales-table" class="table table-bordered table-striped">
+            <table id="sales-table" class="table table-bordered table-striped" style="width: 100%">
                 <thead>
                     <tr>
                         <th>Sale ID</th>
@@ -66,49 +67,6 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach ($sales as $sale)
-                        <tr>
-                            <td>{{ $sale->sale_id }}</td>
-                            <td>{{ $sale->customer_type === 'local' ? $sale->customer_name : $sale->customer?->name }}</td>
-                            <td>{{ $sale->sale_date->format('Y-m-d') }}</td>
-                            <td>{{ $sale->total_amount }}</td>
-                            <td>{{ $sale->paid_amount }}</td>
-                            <td>{{ $sale->due_amount }}</td>
-                            <td>
-                                <span class="badge badge-{{ $sale->payment_status === 'paid' ? 'success' : ($sale->payment_status === 'partial' ? 'warning' : 'danger') }}">
-                                    {{ ucfirst($sale->payment_status) }}
-                                </span>
-                            </td>
-                            <td>{{ $sale->creator?->name }}</td>
-                            <td>
-                                <a href="{{ route('admin.sales.show', $sale) }}" class="btn btn-sm btn-info">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                @can('invoice.view')
-                                    <a href="{{ route('admin.invoices.sale', $sale) }}" class="btn btn-sm btn-secondary"
-                                        target="_blank" title="View invoice">
-                                        <i class="fas fa-file-invoice"></i>
-                                    </a>
-                                @endcan
-                                @can('update', $sale)
-                                    <a href="{{ route('admin.sales.edit', $sale) }}" class="btn btn-sm btn-warning">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                @endcan
-                                @can('delete', $sale)
-                                    <form action="{{ route('admin.sales.destroy', $sale) }}" method="post" class="d-inline" data-confirm="Delete this sale?" data-confirm-text="This will reverse the stock and payment for this sale." data-confirm-button="Delete">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                @endcan
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
             </table>
         </div>
     </div>
@@ -117,8 +75,25 @@
 @push('js')
     <script>
         $(function () {
-            $('#sales-table').DataTable();
-
+            ERP.serverTable('#sales-table', {
+                url: '{{ route('admin.sales.index') }}',
+                filter: '#sales-filter',
+                count: '#sales-count',
+                noun: 'sale',
+                empty: 'No sales recorded yet.',
+                order: [[2, 'desc']],
+                columns: [
+                    { data: 'sale_id', name: 'sale_id' },
+                    { data: 'customer_label', name: 'customer_label' },
+                    { data: 'sale_date', name: 'sale_date' },
+                    { data: 'total_amount', name: 'total_amount' },
+                    { data: 'paid_amount', name: 'paid_amount' },
+                    { data: 'due_amount', name: 'due_amount' },
+                    { data: 'state', name: 'state' },
+                    { data: 'created_by_name', name: 'created_by_name' },
+                    { data: 'actions', name: 'actions', orderable: false, searchable: false, className: 'text-nowrap' },
+                ],
+            });
         });
     </script>
 @endpush

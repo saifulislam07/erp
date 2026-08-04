@@ -10,10 +10,12 @@ use App\Models\ExpenseHead;
 use App\Services\CashBankService;
 use App\Services\MediaService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
+use Yajra\DataTables\Facades\DataTables;
 
 class ExpenseController extends Controller
 {
@@ -22,9 +24,21 @@ class ExpenseController extends Controller
         private readonly MediaService $media,
     ) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|JsonResponse
     {
-        $query = Expense::with('expenseHead');
+        if ($request->ajax()) {
+            return $this->indexData($request);
+        }
+
+        return view('admin.expenses.index', ['expenseHeads' => ExpenseHead::orderBy('name')->get()]);
+    }
+
+    /**
+     * Server-side DataTables feed for the expense listing.
+     */
+    protected function indexData(Request $request): JsonResponse
+    {
+        $query = Expense::query()->with('expenseHead')->select('expenses.*');
 
         if ($headId = $request->get('expense_head_id')) {
             $query->where('expense_head_id', $headId);
@@ -42,10 +56,25 @@ class ExpenseController extends Controller
             $query->where('payment_method', $method);
         }
 
-        $expenses = $query->latest()->get();
-        $expenseHeads = ExpenseHead::orderBy('name')->get();
+        return DataTables::eloquent($query)
+            ->filter(function ($query) use ($request) {
+                $search = $request->input('search.value');
 
-        return view('admin.expenses.index', compact('expenses', 'expenseHeads'));
+                if (filled($search)) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('expenses.expense_id', 'like', "%{$search}%")
+                            ->orWhere('expenses.description', 'like', "%{$search}%")
+                            ->orWhereHas('expenseHead', fn ($h) => $h->where('name', 'like', "%{$search}%"));
+                    });
+                }
+            }, true)
+            ->addColumn('head_name', fn (Expense $expense) => e($expense->expenseHead?->name ?? '—'))
+            ->editColumn('expense_date', fn (Expense $expense) => $expense->expense_date?->format('Y-m-d'))
+            ->editColumn('payment_method', fn (Expense $expense) => ucfirst($expense->payment_method))
+            ->addColumn('actions', fn (Expense $expense) => view('admin.expenses.partials.actions', compact('expense'))->render())
+            ->orderColumn('head_name', 'expense_head_id $1')
+            ->rawColumns(['actions'])
+            ->toJson();
     }
 
     public function create(): View

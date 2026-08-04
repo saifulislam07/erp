@@ -7,7 +7,7 @@
         <div class="card-header">
             <h3 class="card-title">Filters</h3>
         </div>
-        <form action="{{ route('admin.orders.index') }}" method="get">
+        <form action="{{ route('admin.orders.index') }}" method="get" id="orders-filter" data-no-submit-guard>
             <div class="card-body row">
                 <div class="col-md-2">
                     <label>Status</label>
@@ -36,6 +36,7 @@
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="#" class="btn btn-secondary ml-1" data-table-clear>Clear</a>
                 </div>
             </div>
         </form>
@@ -43,14 +44,14 @@
 
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">All Orders</h3>
+            <h3 class="card-title" id="orders-count">All Orders</h3>
             <div class="card-tools">
                 <a href="{{ route('admin.orders.pending') }}" class="btn btn-warning btn-sm">Pending Queue</a>
             </div>
         </div>
 
         <div class="card-body">
-            <table id="orders-table" class="table table-bordered table-striped">
+            <table id="orders-table" class="table table-bordered table-striped" style="width: 100%">
                 <thead>
                     <tr>
                         <th>Order ID</th>
@@ -61,24 +62,6 @@
                         <th></th>
                     </tr>
                 </thead>
-                <tbody>
-                    @foreach ($orders as $order)
-                        @php
-                            $badgeColors = [
-                                'pending' => 'warning', 'processing' => 'info', 'confirmed' => 'primary',
-                                'on_delivery' => 'secondary', 'delivered' => 'success', 'rejected' => 'danger', 'cancelled' => 'dark',
-                            ];
-                        @endphp
-                        <tr>
-                            <td>{{ $order->order_id }}</td>
-                            <td>{{ $order->client->name }} ({{ $order->client->unique_id }})</td>
-                            <td>{{ $order->created_at->format('Y-m-d') }}</td>
-                            <td>{{ $order->total_amount }}</td>
-                            <td><span class="badge badge-{{ $badgeColors[$order->status] ?? 'secondary' }}">{{ ucfirst(str_replace('_', ' ', $order->status)) }}</span></td>
-                            <td><a href="{{ route('admin.orders.show', $order) }}" class="btn btn-sm btn-info">View</a></td>
-                        </tr>
-                    @endforeach
-                </tbody>
             </table>
         </div>
     </div>
@@ -87,7 +70,22 @@
 @push('js')
     <script>
         $(function () {
-            $('#orders-table').DataTable();
+            ERP.serverTable('#orders-table', {
+                url: '{{ route('admin.orders.index') }}',
+                filter: '#orders-filter',
+                count: '#orders-count',
+                noun: 'order',
+                empty: 'No orders yet.',
+                order: [[2, 'desc']],
+                columns: [
+                    { data: 'order_id', name: 'order_id' },
+                    { data: 'client_label', name: 'client_label' },
+                    { data: 'placed_on', name: 'placed_on' },
+                    { data: 'total_amount', name: 'total_amount' },
+                    { data: 'state', name: 'state' },
+                    { data: 'actions', name: 'actions', orderable: false, searchable: false },
+                ],
+            });
         });
     </script>
 @endpush

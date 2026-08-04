@@ -11,11 +11,13 @@ use App\Models\Store;
 use App\Services\CashBankService;
 use App\Services\StockService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
+use Yajra\DataTables\Facades\DataTables;
 
 class SaleController extends Controller
 {
@@ -24,11 +26,23 @@ class SaleController extends Controller
         private readonly CashBankService $cashBankService,
     ) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|JsonResponse
     {
         $this->authorize('viewAny', Sale::class);
 
-        $query = Sale::with(['customer', 'creator']);
+        if ($request->ajax()) {
+            return $this->indexData($request);
+        }
+
+        return view('admin.sales.index');
+    }
+
+    /**
+     * Server-side DataTables feed for the sales listing.
+     */
+    protected function indexData(Request $request): JsonResponse
+    {
+        $query = Sale::query()->with(['customer', 'creator'])->select('sales.*');
 
         if ($fromDate = $request->get('from_date')) {
             $query->whereDate('sale_date', '>=', $fromDate);
@@ -46,9 +60,30 @@ class SaleController extends Controller
             $query->whereHas('items.product', fn ($q) => $q->where('name', 'like', "%{$productName}%"));
         }
 
-        $sales = $query->latest()->get();
+        return DataTables::eloquent($query)
+            ->filter(function ($query) use ($request) {
+                $search = $request->input('search.value');
 
-        return view('admin.sales.index', compact('sales'));
+                if (filled($search)) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('sales.sale_id', 'like', "%{$search}%")
+                            ->orWhere('sales.customer_name', 'like', "%{$search}%")
+                            ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$search}%"));
+                    });
+                }
+            }, true)
+            ->addColumn('customer_label', fn (Sale $sale) => e($sale->customer_type === 'local'
+                ? $sale->customer_name
+                : $sale->customer?->name))
+            ->editColumn('sale_date', fn (Sale $sale) => $sale->sale_date?->format('Y-m-d'))
+            ->addColumn('state', fn (Sale $sale) => view('admin.sales.partials.status-cell', compact('sale'))->render())
+            ->addColumn('created_by_name', fn (Sale $sale) => e($sale->creator?->name ?? '—'))
+            ->addColumn('actions', fn (Sale $sale) => view('admin.sales.partials.actions', compact('sale'))->render())
+            ->orderColumn('customer_label', 'customer_name $1')
+            ->orderColumn('state', 'payment_status $1')
+            ->orderColumn('created_by_name', 'created_by $1')
+            ->rawColumns(['state', 'actions'])
+            ->toJson();
     }
 
     public function create(): View

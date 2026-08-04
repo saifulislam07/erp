@@ -8,9 +8,11 @@ use App\Models\Client;
 use App\Models\PartyPayment;
 use App\Models\Supplier;
 use App\Services\PartyLedgerService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Yajra\DataTables\Facades\DataTables;
 use RuntimeException;
 
 /**
@@ -43,26 +45,65 @@ abstract class PartyPaymentController extends Controller
     /**
      * Balance sheet: who owes what.
      */
-    public function index(Request $request): View
+    public function index(Request $request): View|JsonResponse
     {
         $this->authorizeArea();
 
-        $search = $request->get('q');
+        if ($request->ajax()) {
+            return $this->indexData($request);
+        }
 
+        return view('admin.party-payments.index', [
+            'labels' => $this->labels(),
+            'routePrefix' => $this->routePrefix(),
+        ]);
+    }
+
+    /**
+     * Server-side DataTables feed for the balances screen.
+     *
+     * Each row's balance is derived across purchases/returns/payments rather than
+     * stored, so it comes from the ledger service exactly as before and is paged
+     * as a collection — the browser still only receives one page at a time, and
+     * the money maths stays in the one place that is tested.
+     */
+    protected function indexData(Request $request): JsonResponse
+    {
+        $rows = $this->balances($request);
+        $labels = $this->labels();
+        $routePrefix = $this->routePrefix();
+
+        return DataTables::collection($rows)
+            ->addColumn('party_name', fn ($row) => view('admin.party-payments.partials.balance-party-cell', compact('row', 'routePrefix'))->render())
+            ->addColumn('billed_value', fn ($row) => money($row->billed))
+            ->addColumn('returned_value', fn ($row) => $row->returned > 0 ? money($row->returned) : '—')
+            ->addColumn('paid_value', fn ($row) => view('admin.party-payments.partials.balance-paid-cell', compact('row'))->render())
+            ->addColumn('balance_value', fn ($row) => view('admin.party-payments.partials.balance-cell', compact('row', 'labels'))->render())
+            ->addColumn('actions', fn ($row) => view('admin.party-payments.partials.balance-actions', compact('row', 'routePrefix', 'labels'))->render())
+            ->with([
+                'total_due' => money((float) $rows->sum('balance')),
+                'total_advance' => money((float) $rows->sum('advance')),
+                'with_balance' => $rows->filter(fn ($row) => $row->balance > 0.009)->count(),
+                'total_parties' => $rows->count(),
+            ])
+            ->rawColumns(['party_name', 'paid_value', 'balance_value', 'actions'])
+            ->toJson();
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, object>
+     */
+    private function balances(Request $request): \Illuminate\Support\Collection
+    {
         $rows = $this->partyType() === PartyPayment::TYPE_SUPPLIER
-            ? $this->ledger->supplierBalances($search)
-            : $this->ledger->customerBalances($search);
+            ? $this->ledger->supplierBalances($request->get('q'))
+            : $this->ledger->customerBalances($request->get('q'));
 
         if ($request->boolean('outstanding')) {
             $rows = $rows->filter(fn ($row) => $row->balance > 0.009)->values();
         }
 
-        return view('admin.party-payments.index', [
-            'rows' => $rows,
-            'labels' => $this->labels(),
-            'routePrefix' => $this->routePrefix(),
-            'search' => $search,
-        ]);
+        return $rows;
     }
 
     /**
@@ -128,31 +169,67 @@ abstract class PartyPaymentController extends Controller
     /**
      * Every payment on this side, newest first.
      */
-    public function history(Request $request): View
+    public function history(Request $request): View|JsonResponse
     {
         $this->authorizeArea();
 
-        $payments = PartyPayment::with(['allocations', 'creator'])
+        if ($request->ajax()) {
+            return $this->historyData($request);
+        }
+
+        return view('admin.party-payments.history', [
+            'labels' => $this->labels(),
+            'routePrefix' => $this->routePrefix(),
+        ]);
+    }
+
+    /**
+     * Server-side DataTables feed for the payment history.
+     */
+    protected function historyData(Request $request): JsonResponse
+    {
+        $query = PartyPayment::query()
+            ->with(['allocations', 'creator'])
             ->where('party_type', $this->partyType())
             ->when($request->get('from_date'), fn ($q, $date) => $q->whereDate('payment_date', '>=', $date))
             ->when($request->get('to_date'), fn ($q, $date) => $q->whereDate('payment_date', '<=', $date))
-            ->when($request->get('method'), fn ($q, $method) => $q->where('method', $method))
-            ->latest('payment_date')
-            ->latest('id')
-            ->get();
+            ->when($request->get('method'), fn ($q, $method) => $q->where('method', $method));
 
-        // Resolve the party names in one pass instead of per row.
-        $names = $this->partyType() === PartyPayment::TYPE_SUPPLIER
-            ? Supplier::whereIn('id', $payments->pluck('party_id'))->pluck('name', 'id')
-            : Client::whereIn('id', $payments->pluck('party_id'))->pluck('name', 'id');
+        $labels = $this->labels();
+        $routePrefix = $this->routePrefix();
+        $partyModel = $this->partyType() === PartyPayment::TYPE_SUPPLIER ? Supplier::class : Client::class;
 
-        return view('admin.party-payments.history', [
-            'payments' => $payments,
-            'names' => $names,
-            'labels' => $this->labels(),
-            'routePrefix' => $this->routePrefix(),
-            'filters' => $request->only(['from_date', 'to_date', 'method']),
-        ]);
+        return DataTables::eloquent($query)
+            ->filter(function ($query) use ($request) {
+                $search = $request->input('search.value');
+
+                if (filled($search)) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('payment_id', 'like', "%{$search}%")
+                            ->orWhere('reference', 'like', "%{$search}%");
+                    });
+                }
+            }, true)
+            ->addColumn('paid_on', fn (PartyPayment $payment) => $payment->payment_date?->format('d M Y'))
+            ->addColumn('reference_cell', fn (PartyPayment $payment) => view('admin.party-payments.partials.reference-cell', compact('payment'))->render())
+            // Resolved per row rather than in one pass, but only the current page
+            // is ever rendered so this is a handful of lookups, not a full table.
+            ->addColumn('party_name', fn (PartyPayment $payment) => view('admin.party-payments.partials.party-cell', [
+                'payment' => $payment,
+                'routePrefix' => $routePrefix,
+                'labels' => $labels,
+                'name' => $partyModel::whereKey($payment->party_id)->value('name'),
+            ])->render())
+            ->editColumn('method', fn (PartyPayment $payment) => ucwords(str_replace('_', ' ', $payment->method)))
+            ->addColumn('applied_to', fn (PartyPayment $payment) => view('admin.party-payments.partials.applied-cell', compact('payment'))->render())
+            ->editColumn('amount', fn (PartyPayment $payment) => money($payment->amount))
+            ->addColumn('actions', fn (PartyPayment $payment) => view('admin.party-payments.partials.actions', compact('payment', 'routePrefix'))->render())
+            ->orderColumn('paid_on', 'payment_date $1')
+            ->orderColumn('reference_cell', 'payment_id $1')
+            ->orderColumn('party_name', 'party_id $1')
+            ->with(['paid_value' => money((float) $query->clone()->sum('amount'))])
+            ->rawColumns(['reference_cell', 'party_name', 'applied_to', 'actions'])
+            ->toJson();
     }
 
     /**

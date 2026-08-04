@@ -10,10 +10,12 @@ use App\Models\OrderReturn;
 use App\Models\Store;
 use App\Services\CashBankService;
 use App\Services\StockService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Yajra\DataTables\Facades\DataTables;
 
 class OrderReturnController extends Controller
 {
@@ -22,9 +24,21 @@ class OrderReturnController extends Controller
         private readonly CashBankService $cashBankService,
     ) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|JsonResponse
     {
-        $query = OrderReturn::with(['order', 'client', 'returnType']);
+        if ($request->ajax()) {
+            return $this->indexData($request);
+        }
+
+        return view('admin.returns.index');
+    }
+
+    /**
+     * Server-side DataTables feed for the return listing.
+     */
+    protected function indexData(Request $request): JsonResponse
+    {
+        $query = OrderReturn::query()->with(['order', 'client', 'returnType'])->select('order_returns.*');
 
         if ($status = $request->get('status')) {
             $query->where('status', $status);
@@ -46,9 +60,31 @@ class OrderReturnController extends Controller
             $query->whereDate('created_at', '<=', $toDate);
         }
 
-        $returns = $query->latest()->get();
+        return DataTables::eloquent($query)
+            ->filter(function ($query) use ($request) {
+                $search = $request->input('search.value');
 
-        return view('admin.returns.index', compact('returns'));
+                if (filled($search)) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('order_returns.return_id', 'like', "%{$search}%")
+                            ->orWhereHas('order', fn ($o) => $o->where('order_id', 'like', "%{$search}%"))
+                            ->orWhereHas('client', fn ($c) => $c->where('name', 'like', "%{$search}%"));
+                    });
+                }
+            }, true)
+            ->addColumn('order_label', fn (OrderReturn $return) => e($return->order?->order_id ?? '—'))
+            ->addColumn('client_name', fn (OrderReturn $return) => e($return->client?->name ?? '—'))
+            ->addColumn('type_name', fn (OrderReturn $return) => e($return->returnType?->name ?? '—'))
+            ->addColumn('state', fn (OrderReturn $return) => view('admin.returns.partials.status-cell', compact('return'))->render())
+            ->addColumn('refund', fn (OrderReturn $return) => $return->refund_amount ?? '-')
+            ->addColumn('actions', fn (OrderReturn $return) => view('admin.returns.partials.actions', compact('return'))->render())
+            ->orderColumn('order_label', 'order_id $1')
+            ->orderColumn('client_name', 'client_id $1')
+            ->orderColumn('type_name', 'return_type_id $1')
+            ->orderColumn('state', 'status $1')
+            ->orderColumn('refund', 'refund_amount $1')
+            ->rawColumns(['state', 'actions'])
+            ->toJson();
     }
 
     public function show(OrderReturn $return): View
