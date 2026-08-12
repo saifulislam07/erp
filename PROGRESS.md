@@ -217,3 +217,18 @@
       `activitylog:clean` daily schedule যোগ। টেস্ট:
       [ActivityLogPruneTest](tests/Feature/ActivityLogPruneTest.php)।
 - [x] **`.env.example`** — সব `ERP_*` / `NOTIFY_*` / retention ভেরিয়েবল ডকুমেন্টেড।
+- [x] **Stock + Cash/Bank service টেস্ট** — এতদিন suite মূলত listing smoke test ছিল; এখন
+      মূল money/stock লজিক কভার করা হয়েছে।
+    - [StockServiceTest](tests/Feature/StockServiceTest.php) — ১৭টি টেস্ট: FIFO batch
+      consumption (oldest first, exact-boundary, same-second tie → insertion order),
+      insufficient stock এ throw + rollback, store-scoping, movement log এর
+      before/after quantity, ৬ রকম `movement_type` inference, low-stock notification
+      (admin + Store Manager পায়, অন্যরা পায় না)
+    - [CashBankServiceTest](tests/Feature/CashBankServiceTest.php) — ১১টি টেস্ট: credit/debit,
+      `mobile_banking` → bank bucket, opening balance, প্রতি row এর
+      `balance_cash_after`/`balance_bank_after` snapshot, transfer (দুই leg + total অপরিবর্তিত),
+      history filter (method, date range) ও ordering
+    - ⚠️ **ছোট ফিক্স**: `CashBankService::getTransactionHistory()` শুধু `latest()` করত;
+      transfer এর debit/credit একই সেকেন্ডে লেখা হয় বলে ক্রম অনিশ্চিত ছিল। `latest('id')`
+      tiebreak যোগ করা হয়েছে (StockService আগে থেকেই এই প্যাটার্ন ব্যবহার করে)।
+    - **সম্পূর্ণ suite: ১৫০/১৫০ পাস।**

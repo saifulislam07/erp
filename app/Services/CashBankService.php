@@ -65,7 +65,10 @@ class CashBankService
 
     public function getTransactionHistory(?string $method = null, ?string $fromDate = null, ?string $toDate = null): Collection
     {
-        $query = CashBankTransaction::with('creator')->latest();
+        // `id` breaks the tie: both legs of a transfer are written in the same
+        // second, so ordering on `created_at` alone leaves them interleaved
+        // arbitrarily — and the dashboard only shows the first 30.
+        $query = CashBankTransaction::with('creator')->latest()->latest('id');
 
         if ($method) {
             $query->where('method', $method);
