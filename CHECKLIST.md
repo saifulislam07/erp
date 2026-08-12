@@ -9,6 +9,7 @@
 - [ ] `FILESYSTEM_DISK=local` (default — backups are written under `storage/app/private`; **uploaded images go to `public/upload/`**, not the storage disk)
 - [ ] Optional notification toggles (`config/erp.php`): `NOTIFY_ORDER_PLACED`, `NOTIFY_ORDER_STATUS`, `NOTIFY_PASSWORD_RESET` (default `true`)
 - [ ] Optional media tuning: `ERP_IMAGE_QUALITY` (default 82), `ERP_IMAGE_MAX_WIDTH` (1600), `ERP_IMAGE_THUMB_WIDTH` (400)
+- [ ] Optional activity-log retention: `ACTIVITY_LOGGER_RETENTION_DAYS` (default 365) — see "Activity log" below
 - [ ] Bump `ERP_ASSET_VERSION` after changing anything under `public/assets/` so browsers pick the new file up
 
 ## One-time setup commands
@@ -35,7 +36,7 @@ php artisan db:seed --force       # roles/permissions, default settings, default
 ## Background workers
 
 - [ ] `php artisan queue:work` (or a supervisor-managed process) must be running for queued notification emails (order placed, order status change, password reset) to actually send — they are dispatched via the `database` queue connection and sit in the `jobs` table until a worker processes them.
-- [ ] The task scheduler must run every minute via server cron: `* * * * * php /path-to-project/artisan schedule:run >> /dev/null 2>&1`. This drives the daily `erp:backup` command (registered in `bootstrap/app.php`).
+- [ ] The task scheduler must run every minute via server cron: `* * * * * php /path-to-project/artisan schedule:run >> /dev/null 2>&1`. This drives the daily `erp:backup` and `activitylog:clean` commands (registered in `bootstrap/app.php`).
 
 ## Email
 
@@ -83,7 +84,7 @@ php artisan db:seed --force       # roles/permissions, default settings, default
 - Powered by `spatie/laravel-activitylog` (v4.12, chosen for PHP 8.3 compatibility — the v5 line requires PHP 8.4).
 - Logged models: `Product`, `Purchase`, `Sale`, `Order`, `Client`, `Expense`, `Asset` (fillable-attribute changes only; `Client` excludes `password`/`profile_photo` from the log for privacy).
 - View at `/admin/activity-log` (Admin only), filterable by module, user, and date range.
-- The `activity_log` table will grow indefinitely — consider periodically pruning old entries (e.g. `Activity::where('created_at', '<', now()->subYear())->delete()` on a schedule) once volume becomes a concern; nothing prunes it automatically today.
+- Old entries are pruned automatically: `activitylog:clean` runs daily from `bootstrap/app.php` and deletes anything older than `ACTIVITY_LOGGER_RETENTION_DAYS` (default 365, set in `config/activitylog.php`). This depends on the `schedule:run` cron above actually being installed — without it the table grows indefinitely. Run `php artisan activitylog:clean` by hand to prune immediately.
 
 ## Settings module
 

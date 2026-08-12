@@ -198,8 +198,22 @@
 | Returns টেবিল | `returns` | `order_returns` | MySQL reserved word এড়ানো — ইচ্ছাকৃত, রাখা হয়েছে |
 | Units | `symbol` কলাম | drop করা হয়েছে | শুধু name ব্যবহৃত — ইচ্ছাকৃত, রাখা হয়েছে |
 
-## 📝 জানা সীমাবদ্ধতা
+## ✅ পরবর্তীতে সম্পন্ন (২০২৬-০৮-১২)
 
-- `tests/Feature/Auth/*`, `ProfileTest`, `ExampleTest` — Breeze scaffolding এর ডিফল্ট টেস্ট,
-  `dashboard`/`register`/`profile.edit` route ধরে নেয় যেগুলো এই ERP তে নেই। ১৮টি ব্যর্থ হয়,
-  এই কাজের আগেও হত। মুছে ফেলা বা ERP-এর route অনুযায়ী লেখা দরকার।
+- [x] **Breeze scaffolding টেস্ট পরিষ্কার** — যে ১৮টি টেস্ট ব্যর্থ হত সেগুলো ERP-এর আসল
+      route অনুযায়ী পুনর্লিখিত, আর যেসব ফিচার এই ERP-তে নেই সেগুলোর টেস্ট মুছে ফেলা হয়েছে।
+    - মুছে ফেলা: `RegistrationTest`, `EmailVerificationTest`, `PasswordConfirmationTest`
+      (registration / email verification / password confirm — কোনো route নেই)
+    - পুনর্লিখিত: [AuthenticationTest](tests/Feature/Auth/AuthenticationTest.php) — `AdminLanding`
+      অনুযায়ী login redirect (`dashboard.view` থাকলে dashboard, নাহলে home), logout → `login`
+    - পুনর্লিখিত: [ProfileTest](tests/Feature/ProfileTest.php) — `/admin/profile` (edit, update,
+      email uniqueness, password change)
+    - পুনর্লিখিত: [PasswordUpdateTest](tests/Feature/Auth/PasswordUpdateTest.php) —
+      legacy `/admin/password/change` (GET redirect + PUT)
+    - `ExampleTest` → [RootRedirectTest](tests/Feature/RootRedirectTest.php) (`/` এর redirect আচরণ)
+    - **সম্পূর্ণ suite এখন সবুজ: ১২২/১২২ পাস।**
+- [x] **Activity log pruning** — `config/activitylog.php` publish করা হয়েছে
+      (`ACTIVITY_LOGGER_RETENTION_DAYS`, default ৩৬৫); `bootstrap/app.php` এ
+      `activitylog:clean` daily schedule যোগ। টেস্ট:
+      [ActivityLogPruneTest](tests/Feature/ActivityLogPruneTest.php)।
+- [x] **`.env.example`** — সব `ERP_*` / `NOTIFY_*` / retention ভেরিয়েবল ডকুমেন্টেড।

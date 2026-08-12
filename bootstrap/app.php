@@ -14,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('erp:backup')->daily();
+
+        // The activity log grows with every tracked change; keep only the
+        // retention window set in config/activitylog.php.
+        $schedule->command('activitylog:clean')->daily();
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([

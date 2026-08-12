@@ -3,6 +3,7 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,9 +18,15 @@ class AuthenticationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_users_can_authenticate_using_the_login_screen(): void
+    /**
+     * Users holding `dashboard.view` land on the dashboard; see App\Support\AdminLanding.
+     */
+    public function test_users_with_dashboard_access_land_on_the_dashboard(): void
     {
-        $user = User::factory()->create();
+        $this->seed(RolesAndPermissionsSeeder::class);
+
+        $user = User::factory()->create(['is_admin' => true, 'status' => true]);
+        $user->assignRole('Admin');
 
         $response = $this->post('/login', [
             'email' => $user->email,
@@ -27,7 +34,23 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $response->assertRedirect(route('admin.dashboard'));
+    }
+
+    /**
+     * Everyone else lands on the neutral home page, which never 403s.
+     */
+    public function test_users_without_dashboard_access_land_on_the_home_page(): void
+    {
+        $user = User::factory()->create(['status' => true]);
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('admin.home'));
     }
 
     public function test_users_can_not_authenticate_with_invalid_password(): void
@@ -49,6 +72,6 @@ class AuthenticationTest extends TestCase
         $response = $this->actingAs($user)->post('/logout');
 
         $this->assertGuest();
-        $response->assertRedirect('/');
+        $response->assertRedirect(route('login'));
     }
 }
