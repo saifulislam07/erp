@@ -232,3 +232,14 @@
       transfer এর debit/credit একই সেকেন্ডে লেখা হয় বলে ক্রম অনিশ্চিত ছিল। `latest('id')`
       tiebreak যোগ করা হয়েছে (StockService আগে থেকেই এই প্যাটার্ন ব্যবহার করে)।
     - **সম্পূর্ণ suite: ১৫০/১৫০ পাস।**
+- [x] **Sale + Purchase flow টেস্ট** — controller স্তরে stock, cash ও account একসাথে
+      নড়ে কিনা তা যাচাই (CHECKLIST.md এর `paid_amount` invariant)।
+    - [SaleFlowTest](tests/Feature/SaleFlowTest.php) — ১০টি: stock deduction + cash credit,
+      totals (subtotal − discount + VAT), partial payment এ receivable, fully paid এ
+      receivable নেই, local sale এ কখনো receivable নেই, stock এর বেশি বিক্রি reject
+      (কিছুই লেখা হয় না), `sale.discount` ছাড়া discount শূন্য হয়ে যায়,
+      `sale.client_agent` ছাড়া client sale আটকায়, delete/update এ পূর্ণ reversal
+    - [PurchaseFlowTest](tests/Feature/PurchaseFlowTest.php) — ১০টি: stock addition +
+      cash debit, নতুন batch এ cost price ও expiry, VAT সহ totals, partial এ payable,
+      delete/update reversal, return থাকলে edit/delete আটকায়, permission ছাড়া ৪০৩
+    - **সম্পূর্ণ suite: ১৭০/১৭০ পাস।**
