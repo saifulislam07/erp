@@ -38,7 +38,9 @@ class OrderReturnController extends Controller
      */
     protected function indexData(Request $request): JsonResponse
     {
-        $query = OrderReturn::query()->with(['order', 'client', 'returnType'])->select('order_returns.*');
+        // The model class is OrderReturn but the table is `returns` — qualify
+        // columns with the table name, not the class name.
+        $query = OrderReturn::query()->with(['order', 'client', 'returnType'])->select('returns.*');
 
         if ($status = $request->get('status')) {
             $query->where('status', $status);
@@ -66,7 +68,7 @@ class OrderReturnController extends Controller
 
                 if (filled($search)) {
                     $query->where(function ($q) use ($search) {
-                        $q->where('order_returns.return_id', 'like', "%{$search}%")
+                        $q->where('returns.return_id', 'like', "%{$search}%")
                             ->orWhereHas('order', fn ($o) => $o->where('order_id', 'like', "%{$search}%"))
                             ->orWhereHas('client', fn ($c) => $c->where('name', 'like', "%{$search}%"));
                     });

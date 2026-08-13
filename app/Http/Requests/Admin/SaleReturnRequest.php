@@ -22,9 +22,12 @@ class SaleReturnRequest extends FormRequest
             'items.*.sale_item_id' => ['required', 'integer'],
             'items.*.quantity' => ['nullable', 'numeric', 'min:0'],
             'refund_amount' => ['nullable', 'numeric', 'min:0'],
+            // Only a refund that actually pays out needs a method. `required_with`
+            // cannot express this: a zero refund is still "present", so it would
+            // demand a method for every goods-only return.
             'refund_method' => [
                 'nullable',
-                'required_with:refund_amount',
+                Rule::requiredIf(fn () => (float) $this->input('refund_amount') > 0),
                 Rule::in(['cash', 'bank', 'mobile_banking']),
             ],
         ];
@@ -44,7 +47,7 @@ class SaleReturnRequest extends FormRequest
         return [
             'items.required' => 'Enter a quantity for at least one item.',
             'return_date.before_or_equal' => 'A return cannot be dated in the future.',
-            'refund_method.required_with' => 'Choose how the refund was paid out.',
+            'refund_method.required' => 'Choose how the refund was paid out.',
         ];
     }
 }

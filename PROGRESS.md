@@ -243,3 +243,26 @@
       cash debit, নতুন batch এ cost price ও expiry, VAT সহ totals, partial এ payable,
       delete/update reversal, return থাকলে edit/delete আটকায়, permission ছাড়া ৪০৩
     - **সম্পূর্ণ suite: ১৭০/১৭০ পাস।**
+- [x] **Order lifecycle টেস্ট** — [OrderLifecycleTest](tests/Feature/OrderLifecycleTest.php), ১৮টি।
+      pending → processing → confirmed → on_delivery → delivered পথটি তিনটি controller
+      এ ভাগ করা; প্রতিটি হ্যান্ডঅফ, guard (দুইবার dispatch, out হওয়ার আগে delivered,
+      order screen থেকে dispatch এড়িয়ে যাওয়া), side effect (packaging, delivery তৈরি,
+      failed → processing) ও status log trail কভার করা।
+- [x] **Return টেস্ট + দুটি বাগ ফিক্স**
+    - [OrderReturnFlowTest](tests/Feature/OrderReturnFlowTest.php) — ১০টি: restock vs
+      damage disposition, dispatch store এ ফেরত, refund debit, দুইবার approve আটকানো,
+      reject, dispatch log না থাকলে fallback store।
+    - ⚠️ **বাগ ১ (ফিক্সড)**: `OrderReturnController::indexData()` এ `select('order_returns.*')`
+      ছিল, কিন্তু `OrderReturn` model এর table আসলে `returns`। ফলে একটিও return থাকলেই
+      `/admin/returns` এর DataTables feed `no such table: order_returns` দিয়ে খালি ফিরত
+      (HTTP ২০০ + `error` ফিল্ড)। `returns.*` ও `returns.return_id` করা হয়েছে।
+      পুরনো listing টেস্ট খালি টেবিলে চলত বলে ধরা পড়েনি।
+    - [SaleReturnFlowTest](tests/Feature/SaleReturnFlowTest.php) — ১৪টি: restock/non-restock,
+      discount ও VAT বাদ দিয়ে net unit price, refund > goods value আটকানো, বারবার return
+      করলেও মোট বিক্রির বেশি নয়, অন্য sale এর item, future date, delete reversal, admin-only।
+    - ⚠️ **বাগ ২ (ফিক্সড)**: `SaleReturnRequest` এ `refund_method` এর নিয়ম ছিল
+      `required_with:refund_amount`; কিন্তু normalise করার পর `refund_amount` ০ হিসেবে
+      "present" থাকত, তাই refund ছাড়া (শুধু মাল ফেরত) return সবসময় "Choose how the refund
+      was paid out" দিয়ে আটকে যেত — অথচ ফর্মের ডিফল্টই refund = 0। `Rule::requiredIf(refund > 0)`
+      করা হয়েছে; টাকা বের হলে method এখনো বাধ্যতামূলক (আলাদা টেস্টে ধরা)।
+    - **সম্পূর্ণ suite: ২১২/২১২ পাস।**
