@@ -23,6 +23,10 @@
     <title>{{ $heading }} — {{ $company }}</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <link rel="stylesheet" href="{{ asset('vendor/fontawesome-free/css/all.min.css') }}">
+    {{-- Bootstrap/AdminLTE base: the markup below uses .form-control, .input-group
+         and .btn, so this must load before theme.css overrides it — same order as
+         the panel's own master layout. --}}
+    <link rel="stylesheet" href="{{ asset('assets/core/css/base.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/theme.css') }}?v={{ config('erp.asset_version') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/notify.css') }}?v={{ config('erp.asset_version') }}">
     @if (config('adminlte.google_fonts.allowed', true))

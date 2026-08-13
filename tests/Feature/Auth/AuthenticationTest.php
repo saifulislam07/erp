@@ -19,6 +19,34 @@ class AuthenticationTest extends TestCase
     }
 
     /**
+     * The sign-in pages are standalone — they do not extend the panel layout, so
+     * they have to pull in the Bootstrap/AdminLTE base themselves. Without it the
+     * form markup (.input-group, .form-control, .btn) renders unstyled.
+     *
+     * @param  string  $route
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('guestPages')]
+    public function test_guest_pages_load_the_stylesheets_their_markup_needs(string $route): void
+    {
+        $response = $this->get($route);
+
+        $response->assertOk()
+            ->assertSee('assets/core/css/base.min.css', escape: false)
+            ->assertSee('assets/css/theme.css', escape: false);
+    }
+
+    /**
+     * @return array<string, array{0: string}>
+     */
+    public static function guestPages(): array
+    {
+        return [
+            'login' => ['/login'],
+            'forgot password' => ['/forgot-password'],
+        ];
+    }
+
+    /**
      * Users holding `dashboard.view` land on the dashboard; see App\Support\AdminLanding.
      */
     public function test_users_with_dashboard_access_land_on_the_dashboard(): void
