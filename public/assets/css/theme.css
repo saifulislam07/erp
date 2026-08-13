@@ -610,6 +610,17 @@ a.stat-tile:hover {
     font-size: .82rem;
 }
 
+/*
+ * The length menu is a Bootstrap .custom-select, which paints its caret as a
+ * background image on the right and reserves 1.75rem of padding for it. The
+ * shared rule above collapses that to .5rem, so the value sits underneath the
+ * arrow. Give the room back, and enough width for the three-digit option.
+ */
+.dataTables_wrapper .dataTables_length select {
+    padding-right: 1.75rem;
+    min-width: 4.5rem;
+}
+
 .dataTables_wrapper .dataTables_paginate .paginate_button {
     border-radius: 6px !important;
     border: 0 !important;

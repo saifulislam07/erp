@@ -12,7 +12,7 @@ return [
     |
     */
 
-    'asset_version' => env('ERP_ASSET_VERSION', '1.3.0'),
+    'asset_version' => env('ERP_ASSET_VERSION', '1.3.1'),
 
     /*
     |--------------------------------------------------------------------------
