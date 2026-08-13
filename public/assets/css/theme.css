@@ -31,10 +31,14 @@
     --erp-canvas: #f4f6fb;
     --erp-line: #e6e9f0;
 
-    --erp-nav-bg: #131a2b;
-    --erp-nav-bg-soft: #1c2437;
-    --erp-nav-ink: #a8b1c4;
+    /* Deep indigo rather than a cold navy, so the panel shell and the sign-in
+       page read as one product. Same family as the sign-in aside gradient. */
+    --erp-nav-bg: #1e1b4b;
+    --erp-nav-bg-deep: #191640;
+    --erp-nav-bg-soft: #2b2765;
+    --erp-nav-ink: #b0acd6;
     --erp-nav-ink-strong: #ffffff;
+    --erp-nav-line: rgba(255, 255, 255, .09);
 
     --erp-radius: 10px;
     --erp-radius-sm: 7px;
@@ -103,13 +107,15 @@ a:hover {
 .main-sidebar,
 .main-sidebar .sidebar,
 .main-sidebar.sidebar-dark-primary {
-    background: var(--erp-nav-bg);
+    /* Very slight top-to-bottom fall so a tall sidebar does not read as a flat
+       slab; the shift is small enough to stay invisible as a gradient. */
+    background: linear-gradient(180deg, var(--erp-nav-bg) 0%, var(--erp-nav-bg-deep) 100%);
     box-shadow: none !important;
 }
 
 .main-sidebar .brand-link {
-    background: var(--erp-nav-bg);
-    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    background: transparent;
+    border-bottom: 1px solid var(--erp-nav-line);
     padding: .95rem 1rem;
     height: 58px;
     display: flex;
@@ -148,20 +154,21 @@ a:hover {
 }
 
 .nav-sidebar .nav-header {
-    color: #5c6884;
+    /* Was too dim against the old navy to scan as a group label. */
+    color: #8e89bd;
     font-size: .68rem;
     font-weight: 700;
     letter-spacing: .09em;
     text-transform: uppercase;
-    padding: 1.15rem 1rem .4rem;
+    padding: 1.35rem 1.05rem .45rem;
 }
 
 .nav-sidebar > .nav-item > .nav-link,
 .nav-sidebar .nav-treeview > .nav-item > .nav-link {
     color: var(--erp-nav-ink);
     border-radius: var(--erp-radius-sm);
-    margin: 1px .55rem;
-    padding: .5rem .7rem;
+    margin: 2px .55rem;
+    padding: .55rem .7rem;
     font-size: .875rem;
     font-weight: 500;
     transition: background-color .12s ease, color .12s ease;
@@ -182,7 +189,8 @@ a:hover {
 .nav-sidebar .nav-treeview > .nav-item > .nav-link.active {
     background: var(--erp-primary);
     color: #fff;
-    box-shadow: 0 2px 8px -2px rgba(79, 70, 229, .8);
+    /* The old .8 alpha read as a halo around the pill rather than a lift. */
+    box-shadow: 0 2px 6px -2px rgba(79, 70, 229, .45);
 }
 
 /* Parent of an open branch: highlight without the filled pill. */
@@ -194,7 +202,7 @@ a:hover {
 .nav-sidebar .nav-treeview {
     background: transparent;
     padding-left: .5rem;
-    border-left: 1px solid rgba(255, 255, 255, .07);
+    border-left: 1px solid var(--erp-nav-line);
     margin-left: 1.35rem;
 }
 
@@ -212,14 +220,18 @@ a:hover {
 .sidebar .form-control-sidebar,
 .sidebar .btn-sidebar {
     background: var(--erp-nav-bg-soft);
-    border: 1px solid rgba(255, 255, 255, .08);
+    border: 1px solid var(--erp-nav-line);
     color: #fff;
     border-radius: var(--erp-radius-sm);
 }
 
+.sidebar .form-control-sidebar::placeholder {
+    color: rgba(255, 255, 255, .38);
+}
+
 .sidebar-search-results .list-group-item {
     background: var(--erp-nav-bg-soft);
-    border-color: rgba(255, 255, 255, .08);
+    border-color: var(--erp-nav-line);
     color: var(--erp-nav-ink);
 }
 
