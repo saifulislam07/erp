@@ -302,14 +302,14 @@ return [
         [
             'text' => 'Dashboard',
             'route' => 'admin.dashboard',
-            'icon' => 'fas fa-fw fa-gauge-high',
+            'icon' => 'fas fa-fw fa-tachometer-alt',
             'can' => 'dashboard.view',
             'active' => ['admin/dashboard'],
         ],
         [
             'text' => 'Home',
             'route' => 'admin.home',
-            'icon' => 'fas fa-fw fa-house',
+            'icon' => 'fas fa-fw fa-home',
             'can' => 'view-home-fallback',
             'active' => ['admin/home'],
         ],
@@ -323,6 +323,7 @@ return [
                 [
                     'text' => 'All sales',
                     'route' => 'admin.sales.index',
+                    'icon' => 'fas fa-fw fa-list',
                     // Everything under admin/sales except the report, which is
                     // its own entry below.
                     'active' => ['regex:@^admin/sales(?!/report)(?!/create)@'],
@@ -330,57 +331,66 @@ return [
                 [
                     'text' => 'New sale',
                     'route' => 'admin.sales.create',
+                    'icon' => 'fas fa-fw fa-plus',
                     'active' => ['admin/sales/create'],
                 ],
                 [
                     'text' => 'Sale returns',
                     'route' => 'admin.sale-returns.index',
+                    'icon' => 'fas fa-fw fa-undo',
                     'active' => ['admin/sale-returns*'],
                 ],
                 [
                     'text' => 'Customer dues',
                     'route' => 'admin.customer-payments.index',
+                    'icon' => 'fas fa-fw fa-hand-holding-usd',
                     'active' => ['admin/customer-payments*'],
                 ],
                 [
                     'text' => 'Sales report',
                     'route' => 'admin.sales.report',
+                    'icon' => 'fas fa-fw fa-chart-line',
                     'active' => ['admin/sales/report*'],
                 ],
             ],
         ],
         [
             'text' => 'Orders',
-            'icon' => 'fas fa-fw fa-cart-shopping',
+            'icon' => 'fas fa-fw fa-shopping-cart',
             'can' => ['order.view', 'return.view'],
             'submenu' => [
                 [
                     'text' => 'All orders',
                     'route' => 'admin.orders.index',
+                    'icon' => 'fas fa-fw fa-list',
                     'can' => 'order.view',
                     'active' => ['regex:@^admin/orders(?!/pending)@'],
                 ],
                 [
                     'text' => 'Pending orders',
                     'route' => 'admin.orders.pending',
+                    'icon' => 'fas fa-fw fa-hourglass-half',
                     'can' => 'order.view',
                     'active' => ['admin/orders/pending'],
                 ],
                 [
                     'text' => 'Order returns',
                     'route' => 'admin.returns.index',
+                    'icon' => 'fas fa-fw fa-undo',
                     'can' => 'return.view',
                     'active' => ['admin/returns*'],
                 ],
                 [
                     'text' => 'Return types',
                     'route' => 'admin.return-types.index',
+                    'icon' => 'fas fa-fw fa-tags',
                     'can' => 'return.view',
                     'active' => ['admin/return-types*'],
                 ],
                 [
                     'text' => 'Client feedback',
                     'route' => 'admin.feedbacks.index',
+                    'icon' => 'fas fa-fw fa-comment-dots',
                     'can' => 'return.view',
                     'active' => ['admin/feedbacks*'],
                 ],
@@ -388,17 +398,19 @@ return [
         ],
         [
             'text' => 'Store & delivery',
-            'icon' => 'fas fa-fw fa-truck-fast',
+            'icon' => 'fas fa-fw fa-shipping-fast',
             'can' => 'delivery.view',
             'submenu' => [
                 [
                     'text' => 'Dispatch queue',
                     'route' => 'admin.store.dispatch-queue',
+                    'icon' => 'fas fa-fw fa-dolly',
                     'active' => ['admin/store/dispatch*'],
                 ],
                 [
                     'text' => 'Deliveries',
                     'route' => 'admin.deliveries.index',
+                    'icon' => 'fas fa-fw fa-truck',
                     'active' => ['admin/delivery*'],
                 ],
             ],
@@ -421,37 +433,43 @@ return [
         ['header' => 'Buying & stock', 'can' => ['purchase.view', 'product.view', 'stock.view']],
         [
             'text' => 'Purchases',
-            'icon' => 'fas fa-fw fa-truck-ramp-box',
+            'icon' => 'fas fa-fw fa-truck-loading',
             'can' => 'purchase.view',
             'submenu' => [
                 [
                     'text' => 'All purchases',
                     'route' => 'admin.purchases.index',
+                    'icon' => 'fas fa-fw fa-list',
                     'active' => ['regex:@^admin/purchases(?!/report)(?!/create)@'],
                 ],
                 [
                     'text' => 'New purchase',
                     'route' => 'admin.purchases.create',
+                    'icon' => 'fas fa-fw fa-plus',
                     'active' => ['admin/purchases/create'],
                 ],
                 [
                     'text' => 'Purchase returns',
                     'route' => 'admin.purchase-returns.index',
+                    'icon' => 'fas fa-fw fa-undo',
                     'active' => ['admin/purchase-returns*'],
                 ],
                 [
                     'text' => 'Supplier dues',
                     'route' => 'admin.supplier-payments.index',
+                    'icon' => 'fas fa-fw fa-file-invoice-dollar',
                     'active' => ['admin/supplier-payments*'],
                 ],
                 [
                     'text' => 'Suppliers',
                     'route' => 'admin.suppliers.index',
+                    'icon' => 'fas fa-fw fa-industry',
                     'active' => ['admin/suppliers*'],
                 ],
                 [
                     'text' => 'Purchase report',
                     'route' => 'admin.purchases.report',
+                    'icon' => 'fas fa-fw fa-chart-line',
                     'active' => ['admin/purchases/report*'],
                 ],
             ],
@@ -464,26 +482,31 @@ return [
                 [
                     'text' => 'Products',
                     'route' => 'admin.products.index',
+                    'icon' => 'fas fa-fw fa-boxes',
                     'active' => ['regex:@^admin/products(?!/report)(?!/create)@'],
                 ],
                 [
                     'text' => 'Add product',
                     'route' => 'admin.products.create',
+                    'icon' => 'fas fa-fw fa-plus',
                     'active' => ['admin/products/create'],
                 ],
                 [
                     'text' => 'Categories',
                     'route' => 'admin.categories.index',
+                    'icon' => 'fas fa-fw fa-folder-open',
                     'active' => ['admin/categories*'],
                 ],
                 [
                     'text' => 'Units',
                     'route' => 'admin.units.index',
+                    'icon' => 'fas fa-fw fa-ruler',
                     'active' => ['admin/units*'],
                 ],
                 [
                     'text' => 'Product report',
                     'route' => 'admin.products.report',
+                    'icon' => 'fas fa-fw fa-chart-line',
                     'active' => ['admin/products/report*'],
                 ],
             ],
@@ -496,27 +519,32 @@ return [
                 [
                     'text' => 'Stock list',
                     'route' => 'admin.stocks.index',
+                    'icon' => 'fas fa-fw fa-layer-group',
                     'active' => ['regex:@^admin/stocks(?!/low-quantity)(?!/expiry)@'],
                 ],
                 [
                     'text' => 'Low quantity',
                     'route' => 'admin.stocks.low-quantity',
+                    'icon' => 'fas fa-fw fa-exclamation-triangle',
                     'active' => ['admin/stocks/low-quantity'],
                 ],
                 [
                     'text' => 'Expiring in 1 month',
                     'route' => 'admin.stocks.expiry.one-month',
+                    'icon' => 'fas fa-fw fa-hourglass-end',
                     'active' => ['admin/stocks/expiry/one-month'],
                 ],
                 [
                     'text' => 'Expiring in 3 months',
                     'route' => 'admin.stocks.expiry.three-month',
+                    'icon' => 'fas fa-fw fa-hourglass-half',
                     'active' => ['admin/stocks/expiry/three-month'],
                 ],
                 [
                     // Store CRUD is admin-only at the route level.
                     'text' => 'Stores',
                     'route' => 'admin.stores.index',
+                    'icon' => 'fas fa-fw fa-store',
                     'can' => 'access-system-area',
                     'active' => ['admin/stores*'],
                 ],
@@ -532,36 +560,43 @@ return [
                 [
                     'text' => 'Overview',
                     'route' => 'admin.cash-bank.index',
+                    'icon' => 'fas fa-fw fa-chart-pie',
                     'active' => ['admin/cash-bank'],
                 ],
                 [
                     'text' => 'Transactions',
                     'route' => 'admin.cash-bank.transactions',
+                    'icon' => 'fas fa-fw fa-exchange-alt',
                     'active' => ['admin/cash-bank/transactions'],
                 ],
                 [
                     'text' => 'Transfer money',
                     'route' => 'admin.cash-bank.transfer.form',
+                    'icon' => 'fas fa-fw fa-money-bill-wave',
                     'active' => ['admin/cash-bank/transfer'],
                 ],
                 [
                     'text' => 'Transfer history',
                     'route' => 'admin.cash-bank.transfer-history',
+                    'icon' => 'fas fa-fw fa-history',
                     'active' => ['admin/cash-bank/transfer-history'],
                 ],
                 [
                     'text' => 'Payables',
                     'route' => 'admin.accounts.payable',
+                    'icon' => 'fas fa-fw fa-arrow-circle-up',
                     'active' => ['admin/accounts/payable'],
                 ],
                 [
                     'text' => 'Receivables',
                     'route' => 'admin.accounts.receivable',
+                    'icon' => 'fas fa-fw fa-arrow-circle-down',
                     'active' => ['admin/accounts/receivable'],
                 ],
                 [
                     'text' => 'Salaries',
                     'route' => 'admin.salaries.index',
+                    'icon' => 'fas fa-fw fa-money-check-alt',
                     'active' => ['admin/salaries*'],
                 ],
             ],
@@ -574,38 +609,44 @@ return [
                 [
                     'text' => 'All expenses',
                     'route' => 'admin.expenses.index',
+                    'icon' => 'fas fa-fw fa-list',
                     'active' => ['regex:@^admin/expenses(?!/report)(?!/create)@'],
                 ],
                 [
                     'text' => 'Record expense',
                     'route' => 'admin.expenses.create',
+                    'icon' => 'fas fa-fw fa-plus',
                     'active' => ['admin/expenses/create'],
                 ],
                 [
                     'text' => 'Expense heads',
                     'route' => 'admin.expense-heads.index',
+                    'icon' => 'fas fa-fw fa-tags',
                     'active' => ['admin/expense-heads*'],
                 ],
                 [
                     'text' => 'Expense report',
                     'route' => 'admin.expenses.report',
+                    'icon' => 'fas fa-fw fa-chart-line',
                     'active' => ['admin/expenses/report*'],
                 ],
             ],
         ],
         [
             'text' => 'Assets',
-            'icon' => 'fas fa-fw fa-building-columns',
+            'icon' => 'fas fa-fw fa-university',
             'can' => 'asset.view',
             'submenu' => [
                 [
                     'text' => 'All assets',
                     'route' => 'admin.assets.index',
+                    'icon' => 'fas fa-fw fa-list',
                     'active' => ['regex:@^admin/assets(?!/report)@'],
                 ],
                 [
                     'text' => 'Asset report',
                     'route' => 'admin.assets.report',
+                    'icon' => 'fas fa-fw fa-chart-line',
                     'active' => ['admin/assets/report*'],
                 ],
             ],
@@ -614,7 +655,7 @@ return [
         ['header' => 'Insight', 'can' => 'report.view'],
         [
             'text' => 'Reports',
-            'icon' => 'fas fa-fw fa-chart-column',
+            'icon' => 'fas fa-fw fa-chart-bar',
             'can' => 'report.view',
             // Each entry is gated by the permission its own route enforces, not
             // by report.view alone, so no link here can 403 on click.
@@ -622,24 +663,28 @@ return [
                 [
                     'text' => 'Reports hub',
                     'route' => 'admin.reports.index',
+                    'icon' => 'fas fa-fw fa-compass',
                     'can' => 'report.view',
                     'active' => ['admin/reports'],
                 ],
                 [
                     'text' => 'Profit & loss',
                     'route' => 'admin.reports.profit',
+                    'icon' => 'fas fa-fw fa-balance-scale',
                     'can' => 'report.view',
                     'active' => ['admin/reports/profit*'],
                 ],
                 [
                     'text' => 'Stock valuation',
                     'route' => 'admin.reports.stock',
+                    'icon' => 'fas fa-fw fa-boxes',
                     'can' => 'report.view',
                     'active' => ['admin/reports/stock*'],
                 ],
                 [
                     'text' => 'Order report',
                     'route' => 'admin.reports.orders',
+                    'icon' => 'fas fa-fw fa-clipboard-list',
                     'can' => 'report.view',
                     'active' => ['admin/reports/orders*'],
                 ],
@@ -673,14 +718,14 @@ return [
         [
             'text' => 'Settings',
             'route' => 'admin.settings.index',
-            'icon' => 'fas fa-fw fa-gear',
+            'icon' => 'fas fa-fw fa-cog',
             'can' => 'access-system-area',
             'active' => ['admin/settings*'],
         ],
         [
             'text' => 'Activity log',
             'route' => 'admin.activity-log.index',
-            'icon' => 'fas fa-fw fa-clock-rotate-left',
+            'icon' => 'fas fa-fw fa-history',
             'can' => 'access-system-area',
             'active' => ['admin/activity-log*'],
         ],
@@ -689,7 +734,7 @@ return [
         [
             'text' => 'My profile',
             'route' => 'admin.profile.edit',
-            'icon' => 'fas fa-fw fa-circle-user',
+            'icon' => 'fas fa-fw fa-user-circle',
             'active' => ['admin/profile*', 'admin/password/change'],
         ],
     ],
