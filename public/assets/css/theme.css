@@ -85,14 +85,20 @@ a:hover {
     min-height: 58px;
 }
 
-.main-header .nav-link {
+/*
+ * Only the links sitting directly in the top bar are stretched to the bar's
+ * height. Scoped with `> .nav-item >` because the user dropdown also contains
+ * a .nav-link (the Profile button), and an unscoped rule made that button 58px
+ * tall inside the menu.
+ */
+.main-header .navbar-nav > .nav-item > .nav-link {
     color: var(--erp-ink-soft);
     height: 58px;
     display: flex;
     align-items: center;
 }
 
-.main-header .nav-link:hover {
+.main-header .navbar-nav > .nav-item > .nav-link:hover {
     color: var(--erp-primary);
 }
 
@@ -118,9 +124,11 @@ a:hover {
 .user-footer .btn {
     flex: 1 1 0;
     min-width: 0;
-    padding: .4rem .75rem;
-    font-size: .82rem;
-    line-height: 1.5;
+    /* Belt and braces: nothing should stretch these to the top bar's height. */
+    height: auto;
+    padding: .3rem .6rem;
+    font-size: .8rem;
+    line-height: 1.45;
     text-align: center;
     border: 1px solid var(--erp-line);
     border-radius: var(--erp-radius-sm);
