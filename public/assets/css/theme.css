@@ -96,6 +96,41 @@ a:hover {
     color: var(--erp-primary);
 }
 
+/*
+ * User dropdown footer.
+ *
+ * The packaged menu gives the Profile link both .nav-link and .btn, while Log
+ * Out gets .btn alone. .nav-link is defined after .btn in the base stylesheet,
+ * so it wins on padding (.5rem 1rem against .375rem .75rem) and Profile renders
+ * taller and wider than the button beside it. Normalise both and let them share
+ * the row evenly instead of relying on the packaged float.
+ */
+.user-footer {
+    display: flex;
+    gap: .5rem;
+}
+
+/* The packaged clearfix would otherwise count as a third flex item. */
+.user-footer::after {
+    display: none;
+}
+
+.user-footer .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: .4rem .75rem;
+    font-size: .82rem;
+    line-height: 1.5;
+    text-align: center;
+    border: 1px solid var(--erp-line);
+    border-radius: var(--erp-radius-sm);
+}
+
+.user-footer .btn:hover {
+    background: var(--erp-canvas);
+    border-color: #d8dde8;
+}
+
 .navbar-badge {
     font-size: .62rem;
     font-weight: 600;
