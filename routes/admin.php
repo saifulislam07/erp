@@ -174,12 +174,16 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('purchase-returns', [PurchaseReturnListController::class, 'index'])->name('purchase-returns.index');
     });
 
-    Route::get('purchases/{purchase}/returns', [PurchaseReturnController::class, 'index'])->name('purchases.returns.index');
-    Route::get('purchases/{purchase}/returns/create', [PurchaseReturnController::class, 'create'])->name('purchases.returns.create');
-    Route::post('purchases/{purchase}/returns', [PurchaseReturnController::class, 'store'])->name('purchases.returns.store');
-    Route::get('purchases/{purchase}/returns/{return}/edit', [PurchaseReturnController::class, 'edit'])->name('purchases.returns.edit');
-    Route::put('purchases/{purchase}/returns/{return}', [PurchaseReturnController::class, 'update'])->name('purchases.returns.update');
-    Route::delete('purchases/{purchase}/returns/{return}', [PurchaseReturnController::class, 'destroy'])->name('purchases.returns.destroy');
+    // Gated like the rest of the purchase module: these move stock, so they
+    // must not be reachable by any signed-in user who happens to know the URL.
+    Route::middleware('check.permission:purchase.view')->group(function () {
+        Route::get('purchases/{purchase}/returns', [PurchaseReturnController::class, 'index'])->name('purchases.returns.index');
+        Route::get('purchases/{purchase}/returns/create', [PurchaseReturnController::class, 'create'])->name('purchases.returns.create');
+        Route::post('purchases/{purchase}/returns', [PurchaseReturnController::class, 'store'])->name('purchases.returns.store');
+        Route::get('purchases/{purchase}/returns/{return}/edit', [PurchaseReturnController::class, 'edit'])->name('purchases.returns.edit');
+        Route::put('purchases/{purchase}/returns/{return}', [PurchaseReturnController::class, 'update'])->name('purchases.returns.update');
+        Route::delete('purchases/{purchase}/returns/{return}', [PurchaseReturnController::class, 'destroy'])->name('purchases.returns.destroy');
+    });
 
     Route::get('sales/report', [SaleController::class, 'report'])->name('sales.report');
     Route::get('sales/report/excel', [SaleController::class, 'reportExcel'])->name('sales.report.excel');
