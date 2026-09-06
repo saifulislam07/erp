@@ -139,6 +139,15 @@ class SearchController extends Controller
         return response()->json($stocks);
     }
 
+    /**
+     * The navbar search box, which spans several modules at once.
+     *
+     * Reachable by every signed-in user — a Local Seller must still be able to
+     * search — but each section is skipped unless the user may open that
+     * module, so results never point at a screen that would 403, and the box
+     * cannot be used to read data the user is not entitled to. Admins pass
+     * every check via Gate::before.
+     */
     public function global(Request $request): JsonResponse
     {
         $search = $request->get('q', '');
@@ -147,58 +156,69 @@ class SearchController extends Controller
             return response()->json([]);
         }
 
+        $user = $request->user();
         $results = collect();
 
-        Product::where('status', true)
-            ->where(function ($q) use ($search) {
+        if ($user->can('product.view')) {
+            Product::where('status', true)
+                ->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")->orWhere('unique_id', 'like', "%{$search}%");
+                })
+                ->limit(5)->get()->each(function (Product $product) use ($results) {
+                    $results->push([
+                        'type' => 'Product',
+                        'label' => "{$product->name} ({$product->unique_id})",
+                        'url' => route('admin.products.show', $product),
+                    ]);
+                });
+        }
+
+        if ($user->can('client.view')) {
+            Client::where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")->orWhere('unique_id', 'like', "%{$search}%");
-            })
-            ->limit(5)->get()->each(function (Product $product) use ($results) {
+            })->limit(5)->get()->each(function (Client $client) use ($results) {
                 $results->push([
-                    'type' => 'Product',
-                    'label' => "{$product->name} ({$product->unique_id})",
-                    'url' => route('admin.products.show', $product),
+                    'type' => 'Client',
+                    'label' => "{$client->name} ({$client->unique_id})",
+                    'url' => route('admin.clients.edit', $client),
                 ]);
             });
+        }
 
-        Client::where(function ($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%")->orWhere('unique_id', 'like', "%{$search}%");
-        })->limit(5)->get()->each(function (Client $client) use ($results) {
-            $results->push([
-                'type' => 'Client',
-                'label' => "{$client->name} ({$client->unique_id})",
-                'url' => route('admin.clients.edit', $client),
-            ]);
-        });
+        if ($user->can('order.view')) {
+            Order::where('order_id', 'like', "%{$search}%")
+                ->limit(5)->get()->each(function (Order $order) use ($results) {
+                    $results->push([
+                        'type' => 'Order',
+                        'label' => $order->order_id,
+                        'url' => route('admin.orders.show', $order),
+                    ]);
+                });
+        }
 
-        Order::where('order_id', 'like', "%{$search}%")
-            ->limit(5)->get()->each(function (Order $order) use ($results) {
-                $results->push([
-                    'type' => 'Order',
-                    'label' => $order->order_id,
-                    'url' => route('admin.orders.show', $order),
-                ]);
-            });
+        if ($user->can('sale.view')) {
+            Sale::where('sale_id', 'like', "%{$search}%")
+                ->orWhere('customer_name', 'like', "%{$search}%")
+                ->limit(5)->get()->each(function (Sale $sale) use ($results) {
+                    $results->push([
+                        'type' => 'Sale',
+                        'label' => "{$sale->sale_id} - {$sale->customer_name}",
+                        'url' => route('admin.sales.show', $sale),
+                    ]);
+                });
+        }
 
-        Sale::where('sale_id', 'like', "%{$search}%")
-            ->orWhere('customer_name', 'like', "%{$search}%")
-            ->limit(5)->get()->each(function (Sale $sale) use ($results) {
-                $results->push([
-                    'type' => 'Sale',
-                    'label' => "{$sale->sale_id} - {$sale->customer_name}",
-                    'url' => route('admin.sales.show', $sale),
-                ]);
-            });
-
-        Supplier::where('name', 'like', "%{$search}%")
-            ->orWhere('unique_id', 'like', "%{$search}%")
-            ->limit(5)->get()->each(function (Supplier $supplier) use ($results) {
-                $results->push([
-                    'type' => 'Supplier',
-                    'label' => "{$supplier->name} ({$supplier->unique_id})",
-                    'url' => route('admin.suppliers.edit', $supplier),
-                ]);
-            });
+        if ($user->can('purchase.view')) {
+            Supplier::where('name', 'like', "%{$search}%")
+                ->orWhere('unique_id', 'like', "%{$search}%")
+                ->limit(5)->get()->each(function (Supplier $supplier) use ($results) {
+                    $results->push([
+                        'type' => 'Supplier',
+                        'label' => "{$supplier->name} ({$supplier->unique_id})",
+                        'url' => route('admin.suppliers.edit', $supplier),
+                    ]);
+                });
+        }
 
         return response()->json($results->values());
     }

@@ -113,13 +113,29 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('notifications/poll', [NotificationController::class, 'poll'])->name('notifications.poll');
     Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
+    /*
+     * Search endpoints return the same records the module screens do, so each
+     * one is gated on the permission of the module it reads. `global` backs
+     * the navbar box and stays open to every signed-in user; it filters its
+     * own sections by permission instead.
+     */
     Route::prefix('search')->name('search.')->group(function () {
         Route::get('global', [SearchController::class, 'global'])->name('global');
-        Route::get('suppliers', [SearchController::class, 'suppliers'])->name('suppliers');
-        Route::get('orders', [SearchController::class, 'orders'])->name('orders');
-        Route::get('sales', [SearchController::class, 'sales'])->name('sales');
-        Route::get('returns', [SearchController::class, 'returns'])->name('returns');
-        Route::get('stocks', [SearchController::class, 'stocks'])->name('stocks');
+
+        Route::middleware('check.permission:purchase.view')
+            ->get('suppliers', [SearchController::class, 'suppliers'])->name('suppliers');
+
+        Route::middleware('check.permission:order.view')
+            ->get('orders', [SearchController::class, 'orders'])->name('orders');
+
+        Route::middleware('check.permission:sale.view')
+            ->get('sales', [SearchController::class, 'sales'])->name('sales');
+
+        Route::middleware('check.permission:return.view')
+            ->get('returns', [SearchController::class, 'returns'])->name('returns');
+
+        Route::middleware('check.permission:stock.view')
+            ->get('stocks', [SearchController::class, 'stocks'])->name('stocks');
     });
 
     // Left ungated: products/search is an AJAX lookup used while building
