@@ -10,6 +10,7 @@ use App\Models\ReturnItem;
 use App\Models\ReturnType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ReturnController extends Controller
@@ -55,33 +56,39 @@ class ReturnController extends Controller
         abort_unless($order->client_id === $request->user('client')->id, 403);
         abort_unless($order->status === 'delivered', 403, 'This order is not eligible for return.');
 
-        $return = OrderReturn::create([
-            'order_id' => $order->id,
-            'client_id' => $request->user('client')->id,
-            'return_type_id' => $request->return_type_id,
-            'reason' => $request->reason,
-            'note' => $request->note,
-            'status' => 'pending',
-            'requested_at' => now(),
-        ]);
-
-        foreach ($request->items as $row) {
-            $quantity = (float) $row['quantity'];
-
-            if ($quantity <= 0) {
-                continue;
-            }
-
-            $orderItem = $order->items()->findOrFail($row['order_item_id']);
-
-            $return->items()->create([
-                'order_item_id' => $orderItem->id,
-                'product_id' => $orderItem->product_id,
-                'quantity' => $quantity,
-                'unit_price' => $orderItem->unit_price,
-                'total_price' => $quantity * $orderItem->unit_price,
+        // One transaction: the lines are looked up against this order, so a
+        // payload naming an item from someone else's order aborts partway
+        // through. Without this the header would already be committed and the
+        // admin queue would fill with empty pending returns.
+        DB::transaction(function () use ($request, $order) {
+            $return = OrderReturn::create([
+                'order_id' => $order->id,
+                'client_id' => $request->user('client')->id,
+                'return_type_id' => $request->return_type_id,
+                'reason' => $request->reason,
+                'note' => $request->note,
+                'status' => 'pending',
+                'requested_at' => now(),
             ]);
-        }
+
+            foreach ($request->items as $row) {
+                $quantity = (float) $row['quantity'];
+
+                if ($quantity <= 0) {
+                    continue;
+                }
+
+                $orderItem = $order->items()->findOrFail($row['order_item_id']);
+
+                $return->items()->create([
+                    'order_item_id' => $orderItem->id,
+                    'product_id' => $orderItem->product_id,
+                    'quantity' => $quantity,
+                    'unit_price' => $orderItem->unit_price,
+                    'total_price' => $quantity * $orderItem->unit_price,
+                ]);
+            }
+        });
 
         return redirect()->route('client.returns.index')->with('success', 'Return request submitted successfully.');
     }
