@@ -1,9 +1,9 @@
 # ERP System — Progress Tracker
 
 সোর্স: `ERP_Claude_Code_Master_Prompts.md` (১৩ ফেজ) + `note.text` (ফলো-আপ কাস্টম আইটেম, কমিট `43b0253`-এ ক্লোজ হয়েছে)
-সর্বশেষ আপডেট: 2026-09-06 · ব্রাঞ্চ `master` · শেষ কমিট `2389a52`
+সর্বশেষ আপডেট: 2026-09-06 · ব্রাঞ্চ `master`
 
-**সারসংক্ষেপ: ১৩/১৩ ফেজ শেষ ✅ · note.text-এর ১৬/১৬ আইটেম শেষ ✅ · বাকি আছে শুধু ডিপ্লয়মেন্ট ও টেস্ট কভারেজ**
+**সারসংক্ষেপ: ১৩/১৩ ফেজ শেষ ✅ · note.text-এর ১৬/১৬ আইটেম শেষ ✅ · টেস্ট স্যুট ৮৬/৮৬ সবুজ ✅ · বাকি আছে শুধু সার্ভার-সাইড ডিপ্লয়মেন্ট**
 
 ---
 
@@ -149,12 +149,37 @@
 
 ---
 
+## ✅ ফেজ-পরবর্তী কাজ (এই সেশনে শেষ)
+
+### টেস্ট কভারেজ ✅
+
+আগে: ৪০টি টেস্টের মধ্যে **২২টি পাস, ১৫টি ফেল + ৩টি এরর**। ফেলগুলো সব Laravel Breeze-এর scaffold টেস্ট — এই প্যানেলে নেই এমন ফিচার (public registration, email verification, password confirmation) খুঁজছিল।
+
+- [x] অস্তিত্বহীন ফিচারের Breeze টেস্ট মুছে ফেলা (`RegistrationTest`, `EmailVerificationTest`, `PasswordConfirmationTest`, দুটি `ExampleTest`)
+- [x] `AuthenticationTest`, `ProfileTest`, `PasswordUpdateTest` — বাস্তব রুট অনুযায়ী নতুন করে লেখা
+- [x] `StockServiceTest` — FIFO ব্যাচ, স্টক কম থাকলে deduction আটকানো, low-stock alert
+- [x] `PurchaseFlowTest` — VAT, স্টক বৃদ্ধি, ক্যাশ ডেবিট, supplier payable, delete-এ পূর্ণ রিভার্সাল
+- [x] `SaleFlowTest` — স্টক কমা, ক্যাশ ক্রেডিট, client receivable, ডিসকাউন্ট ও client/agent পারমিশন, oversell ব্লক
+- [x] `OrderFlowTest` — সার্ভার-সাইড প্রাইসিং (payload টেম্পার করলেও দাম বদলায় না), ডিসকাউন্ট উইন্ডো, স্ট্যাটাস ল্যাডার, ক্লায়েন্ট আইসোলেশন
+- [x] `FormatHelperTest` (Unit) — `qty()`, `percent()`, `amount_in_words()`
+- [x] ফ্যাক্টরি: `Category`, `Unit`, `Store`, `Supplier`, `Product`, `Client` + `UserFactory`-তে `admin()` / `inactive()` state
+
+**ফলাফল: ৮৬টি টেস্ট, ২৩২টি অ্যাসারশন, সব পাস।**
+
+### ডিফল্ট অ্যাডমিন পাসওয়ার্ড ✅
+
+- [x] সিডার থেকে হার্ডকোড করা `password` সরানো হয়েছে
+- [x] `ADMIN_EMAIL` / `ADMIN_PASSWORD` env দিয়ে সেট করা যায়; `ADMIN_PASSWORD` ফাঁকা থাকলে র‍্যান্ডম পাসওয়ার্ড তৈরি হয়ে একবারই কনসোলে ছাপা হয়
+- [x] সিডার আবার চালালে বিদ্যমান অ্যাডমিনের পাসওয়ার্ড রিসেট হয় না
+- [x] `DatabaseSeederTest` — কোনো পরিচিত দুর্বল পাসওয়ার্ড নেই, রি-সিডে পাসওয়ার্ড অক্ষত
+- [x] `CHECKLIST.md` ও `.env.example` আপডেট
+
+---
+
 ## ⏳ এখনো বাকি
 
-- [ ] **ডিপ্লয়মেন্ট চেকলিস্ট** — `CHECKLIST.md`-এর env var, one-time setup command, queue worker, cron scheduler কোনোটাই এখনো টিক দেওয়া নেই (প্রোডাকশন সার্ভারে করার কাজ)
-- [ ] **ডিফল্ট অ্যাডমিন পাসওয়ার্ড পরিবর্তন** — `admin@example.com` / `password` এখনো সিডারে আছে
-- [ ] **অটোমেটেড টেস্ট কভারেজ পাতলা** — এখন আছে মাত্র ৪টি feature test (`MediaServiceTest`, `PartyLedgerServiceTest`, `ProfileTest`, `Auth`) + ২টি example test। Sales / Purchase / Order / Stock / PartyPayment-এর মূল ফ্লোতে কোনো টেস্ট নেই
-- [ ] **আনকমিটেড পরিবর্তন** — `composer.lock` ও `package-lock.json` modified অবস্থায় আছে
+- [ ] **ডিপ্লয়মেন্ট চেকলিস্ট** — `CHECKLIST.md`-এর env var, one-time setup command, queue worker, cron scheduler কোনোটাই এখনো টিক দেওয়া নেই। এগুলো প্রোডাকশন সার্ভারে করার কাজ, কোডে নয়
+- [ ] **আনকমিটেড পরিবর্তন** — `composer.lock` ও `package-lock.json` সেশনের শুরু থেকেই modified; এছাড়া `config/erp.php` ও `resources/views/auth/*` -এ dev-login prefill নিয়ে আপনার নিজের কাজ চলছে (আমি ছুঁইনি)
 
 ---
 

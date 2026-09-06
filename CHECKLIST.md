@@ -27,9 +27,11 @@ php artisan db:seed --force       # roles/permissions, default settings, default
 - `php artisan db:seed --class=SettingsSeeder` — default company/system settings (company name, currency symbol, low-stock threshold, VAT reg. number)
 - `php artisan db:seed` (no class) — runs both of the above plus creates the default admin user
 
-## Default login credentials
+## First admin account
 
-- **Admin (web guard, `/login`)**: `admin@example.com` / `password` — **change this password immediately in production** (`admin/password/change` after first login, or update the seeder before deploying).
+- `php artisan db:seed` creates one administrator. There is **no fixed default password**: set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env` before seeding to choose the credentials, or leave `ADMIN_PASSWORD` blank and the seeder generates a random one and **prints it once** — copy it from the command output, it is not recoverable afterwards.
+- Re-running the seeder never rewrites an existing admin's password; it says so and moves on. To reset a forgotten password use the "Forgot password" link, or `php artisan tinker` → `User::where('email', …)->first()->update(['password' => '…'])`.
+- Seed **before** `php artisan config:cache`. With a cached config the `.env` file is not loaded, so `ADMIN_PASSWORD` would be ignored and a random password generated instead.
 - Client accounts are created from the admin panel (Clients/Agents → Create) — there is no seeded default client.
 
 ## Background workers
