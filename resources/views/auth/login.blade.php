@@ -3,7 +3,22 @@
     'subheading' => 'Use the account your administrator set up for you.',
 ])
 
+@php
+    // Local development only: prefill the seeded admin account so it does not
+    // have to be retyped. `environment('local')` is the gate, so this is inert
+    // on staging and production regardless of what config/erp.php holds.
+    $devLogin = app()->environment('local') ? config('erp.dev_login') : null;
+@endphp
+
 @section('form')
+    @if ($devLogin)
+        <div class="auth-dev-note">
+            <i class="fas fa-flask mr-1"></i>
+            Local environment — admin credentials prefilled from
+            <code>config/erp.dev_login</code>.
+        </div>
+    @endif
+
     <form action="{{ route('login') }}" method="post">
         @csrf
 
@@ -15,7 +30,7 @@
                 </div>
                 <input type="email" name="email" id="email" required autofocus autocomplete="username"
                     class="form-control @error('email') is-invalid @enderror"
-                    value="{{ old('email') }}" placeholder="you@company.com">
+                    value="{{ old('email', $devLogin['email'] ?? '') }}" placeholder="you@company.com">
             </div>
             @error('email')
                 <span class="invalid-feedback d-block">{{ $message }}</span>
@@ -30,6 +45,7 @@
                 </div>
                 <input type="password" name="password" id="password" required autocomplete="current-password"
                     class="form-control @error('password') is-invalid @enderror"
+                    value="{{ $devLogin['password'] ?? '' }}"
                     placeholder="Your password">
                 <div class="input-group-append">
                     <button type="button" class="btn btn-secondary" id="toggle-password"

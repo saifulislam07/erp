@@ -33,6 +33,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Local Sign-in Convenience
+    |--------------------------------------------------------------------------
+    |
+    | When APP_ENV=local the sign-in form is prefilled with these credentials
+    | so the seeded admin account does not have to be retyped during
+    | development. The prefill is gated on the local environment in the view,
+    | so these values are inert anywhere else. Override per developer in .env.
+    |
+    */
+
+    'dev_login' => [
+        'email' => env('DEV_LOGIN_EMAIL', 'admin@example.com'),
+        'password' => env('DEV_LOGIN_PASSWORD', 'password'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Media
     |--------------------------------------------------------------------------
     |

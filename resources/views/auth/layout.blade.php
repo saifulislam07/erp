@@ -1,12 +1,4 @@
-{{--
-    Sign-in shell.
 
-    Standalone rather than built on the admin layout: these pages are shown to
-    people who are not signed in, so they must not load the panel's sidebar,
-    menu queries or notification polling.
-
-    Child pages provide: $heading, $subheading and the `form` section.
---}}
 @php
     $company = \App\Support\Branding::name();
     $logo = \App\Support\Branding::logoUrl();
@@ -23,6 +15,7 @@
     <title>{{ $heading }} — {{ $company }}</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <link rel="stylesheet" href="{{ asset('vendor/fontawesome-free/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('vendor/adminlte/dist/css/adminlte.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/theme.css') }}?v={{ config('erp.asset_version') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/notify.css') }}?v={{ config('erp.asset_version') }}">
     @if (config('adminlte.google_fonts.allowed', true))
@@ -170,6 +163,28 @@
             padding: .62rem 1rem;
             font-size: .92rem;
             font-weight: 600;
+        }
+
+        /* Shown only in the local environment, where the form is prefilled. */
+        .auth-dev-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            padding: 9px 12px;
+            margin-bottom: 20px;
+            border: 1px dashed var(--erp-warning);
+            border-radius: var(--erp-radius-sm);
+            background: var(--erp-warning-050);
+            color: var(--erp-warning);
+            font-size: .78rem;
+            line-height: 1.5;
+        }
+
+        .auth-dev-note code {
+            background: transparent;
+            color: inherit;
+            font-size: .76rem;
+            padding: 0;
         }
 
         .auth-links {
