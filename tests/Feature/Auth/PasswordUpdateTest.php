@@ -7,6 +7,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
+/**
+ * Changing your own password from the profile screen. The current password
+ * must be proved first, so a hijacked session cannot lock the owner out.
+ */
 class PasswordUpdateTest extends TestCase
 {
     use RefreshDatabase;
@@ -15,37 +19,50 @@ class PasswordUpdateTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this
-            ->actingAs($user)
-            ->from('/profile')
-            ->put('/password', [
+        $response = $this->actingAs($user)
+            ->from(route('admin.profile.edit'))
+            ->put(route('admin.profile.password'), [
                 'current_password' => 'password',
-                'password' => 'new-password',
-                'password_confirmation' => 'new-password',
+                'new_password' => 'new-password-1A',
+                'new_password_confirmation' => 'new-password-1A',
             ]);
 
-        $response
-            ->assertSessionHasNoErrors()
-            ->assertRedirect('/profile');
+        $response->assertSessionHasNoErrors()
+            ->assertRedirect(route('admin.profile.edit'));
 
-        $this->assertTrue(Hash::check('new-password', $user->refresh()->password));
+        $this->assertTrue(Hash::check('new-password-1A', $user->refresh()->password));
     }
 
     public function test_correct_password_must_be_provided_to_update_password(): void
     {
         $user = User::factory()->create();
 
-        $response = $this
-            ->actingAs($user)
-            ->from('/profile')
-            ->put('/password', [
+        $this->actingAs($user)
+            ->from(route('admin.profile.edit'))
+            ->put(route('admin.profile.password'), [
                 'current_password' => 'wrong-password',
-                'password' => 'new-password',
-                'password_confirmation' => 'new-password',
-            ]);
+                'new_password' => 'new-password-1A',
+                'new_password_confirmation' => 'new-password-1A',
+            ])
+            ->assertSessionHasErrors('current_password')
+            ->assertRedirect(route('admin.profile.edit'));
 
-        $response
-            ->assertSessionHasErrorsIn('updatePassword', 'current_password')
-            ->assertRedirect('/profile');
+        $this->assertTrue(Hash::check('password', $user->refresh()->password));
+    }
+
+    public function test_new_password_must_be_confirmed(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->from(route('admin.profile.edit'))
+            ->put(route('admin.profile.password'), [
+                'current_password' => 'password',
+                'new_password' => 'new-password-1A',
+                'new_password_confirmation' => 'something-else',
+            ])
+            ->assertSessionHasErrors('new_password');
+
+        $this->assertTrue(Hash::check('password', $user->refresh()->password));
     }
 }

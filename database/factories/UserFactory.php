@@ -30,6 +30,8 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'is_admin' => false,
+            'status' => true,
         ];
     }
 
@@ -40,6 +42,28 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * A super admin. `is_admin` short circuits every permission check
+     * (Gate::before, CheckPermission, AdminOnly), so tests that only care
+     * about a module's behaviour can use this instead of seeding roles.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_admin' => true,
+        ]);
+    }
+
+    /**
+     * A deactivated account.
+     */
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => false,
         ]);
     }
 }
